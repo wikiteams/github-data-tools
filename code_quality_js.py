@@ -36,17 +36,15 @@ class MongoImporter():
                 repo.git.checkout(push['payload']['head'])
 
                 # copy/paste detection
-                cpd = check_output(["jscpd", "--min-tokens", "50", "--languages", "javascript", "--path", repoDestinationPath])
-
-                print cpd
-                sys.exit(0)
+                #cpd = check_output(["jscpd", "--min-tokens", "50", "--languages", "javascript", "--path", repoDestinationPath])
+                #print cpd
+                #sys.exit(0)
+                #clones = r'Found (\d+) exact clones with (\d+) duplicated lines in 35 files'
+                #total = r'(\d+\.\d+) \((\d+) lines\) duplicated lines out of (\d+) total lines of code'
 
                 # complexity-raport
-                cr = check_output(["cr", "--maxfiles", "5120", "--format", "json", repoDestinationPath])
+                cr = unicode(check_output(["cr", "--maxfiles", "5120", "--format", "json", repoDestinationPath]), encoding='utf-8')
                 jsonObject = json.loads(cr)
-
-                clones = r'Found (\d+) exact clones with (\d+) duplicated lines in 35 files'
-                total = r'(\d+\.\d+) \((\d+) lines\) duplicated lines out of (\d+) total lines of code'
 
                 result = {
                     'sha1': push['payload']['head'],
@@ -82,6 +80,8 @@ class MongoImporter():
                 print "Error: %s" % e.message
             except CalledProcessError, e:
                 print "Error: %s" % e.message
+            #except ValueError:
+            #    print "Error: %s" % e.message
             #shutil.rmtree(repoDestinationPath)
 
 
