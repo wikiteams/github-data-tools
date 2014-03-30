@@ -80,6 +80,8 @@ class MongoImporter():
                 print "Error: %s" % e.message
             except CalledProcessError, e:
                 print "Error: %s" % e.message
+            except exc.GitCommandError, e:
+                print "Error: %s" % e.message
             #except ValueError:
             #    print "Error: %s" % e.message
             #shutil.rmtree(repoDestinationPath)
