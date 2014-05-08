@@ -114,9 +114,12 @@ class StarsGetter():
                     watch = stargazing.next()
                     print 'Working on watch event no: ' + str(watch['_id'])
                     print 'date of watch activity: ' + str(watch['created_at'])
-                    datep = watch['created_at']
-                    self.print_to_csv(starsWriter, [str(watch['repository']['url']), str(watch['repository']['owner']),
-                                      str(watch['repository']['name']), str(watch['repository']['stargazers']), str(datep)])
+                    try:
+                        datep = watch['created_at']
+                        self.print_to_csv(starsWriter, [str(watch['repository']['url']), str(watch['repository']['owner']),
+                                          str(watch['repository']['name']), str(watch['repository']['stargazers']), str(datep)])
+                    except KeyError:
+                        print 'Something went wrong. Missing repository info. Moving on.'
                     w += 1
                     #print 'Watch Events left: %s' % (stargazingCount - w)
                     print 'Watch Events processed: ' + str(w)
