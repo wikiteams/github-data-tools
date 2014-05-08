@@ -1,7 +1,16 @@
 github-data-tools
 =================
 
+## Description
+
 A handy set of tools which first gets data from GitHub Archive website. Secondly, we unpack that data and add .json files to a mongodb database. Finally, we analyze those GitHub Events to create list of developers and their attributes which are important for typical OSS and COIN analysis.
+
+### Requirements
+
+* Python with all installed packages
+* Mongodb with GHA events or at least downloaded GHA (import first)
+
+### Dimensionsal output data
 
 Dimensions which we want to describe for a developer:
 
