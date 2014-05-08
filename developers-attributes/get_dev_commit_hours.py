@@ -3,7 +3,7 @@ import github
 
 __author__ = 'snipe'
 
-import csv, glob, sys, gzip, json, ijson, datetime, operator, os
+import csv, glob, sys, gzip, json, datetime, operator, os
 from pymongo import MongoClient
 from itertools import izip_longest, permutations
 
@@ -47,22 +47,31 @@ class EventsGetter():
         i = 0
 
         for push in pushes:
-            url = 'http://osrc.dfm.io/%s.json' % push['actor']
-            response = requests.get(url)
-
-            jsonObject = response.json()
-            usage = jsonObject['usage']['day'].index(max(jsonObject['usage']['day']))
-
-            if push['actor'] not in authors.keys():
-                authors[push['actor']] = {}
-
-            authors[push['actor']]['hour'] = usage
-            authors[push['actor']]['timezone'] = jsonObject['timezone']
-
             i += 1
             print 'Pushes left: %s' % (pushesCount - i)
 
-            with open('export_hours.json', 'w') as outfile:
+            if push['actor'] in authors.keys():
+                print 'Ommiting: %s' % push['actor']
+                continue
+
+            print 'Getting: %s' % push['actor']
+            authors[push['actor']] = {}
+
+            url = 'http://osrc.dfm.io/%s.json' % push['actor']
+            response = requests.get(url)
+
+            if response.status_code != 200:
+                continue
+
+            jsonObject = response.json
+            for item in jsonObject['usage']['events']:
+                if item['type'] == 'PushEvent':
+                    usage = item['day'].index(max(item['day']))
+
+                    authors[push['actor']]['hour'] = usage
+                    authors[push['actor']]['timezone'] = jsonObject['timezone']
+
+            with open('export_commit_hours.json', 'w') as outfile:
                 json.dump(authors, outfile)
 
 if __name__ == "__main__":

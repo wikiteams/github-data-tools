@@ -14,7 +14,7 @@ class MongoImporter():
     csv_files = None
     csv_data = None
     first_row = None
-    path = '/media/snipe/Data/git-cloned'
+    path = '/home/bgruszka/data/git-cloned'
 
     def open_mongo_db(self):
         self.db = MongoClient(host='localhost', port=27017)

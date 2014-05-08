@@ -3,7 +3,7 @@ import github
 
 __author__ = 'snipe'
 
-import csv, glob, sys, gzip, json, ijson, datetime, operator, os
+import csv, glob, sys, gzip, json, datetime, operator, os
 from pymongo import MongoClient
 from itertools import izip_longest, permutations
 
@@ -30,7 +30,7 @@ class EventsGetter():
         self.db = MongoClient(host='localhost', port=27017)
 
     def print_to_csv(self, data):
-        with open('../csv/export_closed_bug_issues_global.csv', 'a+') as f:
+        with open('export_closed_bug_issues_global.csv', 'a+') as f:
             f.write("user_name;closed_bug_issues_count\r\n")
 
             for item in data:
@@ -46,11 +46,11 @@ class EventsGetter():
 
         TOKENS = [
             '2bc539d7f125c28e2d44adba01f6a9aa35373a66', #bgruszka
+            'a4a888415301b475dcfb19c7dc04705a50c0948f', #wiki-worker4
             #'d3c1492ba0a1baea7a31f2b1580c73c16b31c39e',
             'e92c7b5de5c5ce2225f5e1932e5e4abbbf0d05c6', #wiki-worker1
             '2364969c040e048531ee52437096f3e1e0316999', #wiki-worker2
             '6315ce5aef0478498abbff29a3703aac9dfe9bd2', #wiki-worker3
-            'a4a888415301b475dcfb19c7dc04705a50c0948f', #wiki-worker4
         ]
 
         TOKEN_INDEX = 0
@@ -59,7 +59,7 @@ class EventsGetter():
         for push in pushes:
             response = requests.get(push['url'].replace('github.com', 'api.github.com/repos'), headers = { 'Authorization': 'token %s' % TOKENS[TOKEN_INDEX] })
 
-            if response.headers['X-RateLimit-Remaining'] == 1:
+            if int(response.headers['X-RateLimit-Remaining']) <= 5:
                 if TOKEN_INDEX + 1 == len(TOKENS):
                     TOKEN_INDEX = 0
                 else:
@@ -72,7 +72,7 @@ class EventsGetter():
             if response.status_code != 200:
                 continue
 
-            jsonObject = response.json()
+            jsonObject = response.json
 
             if not push['actor'] in authors.keys():
                 authors[push['actor']] = {}
@@ -90,9 +90,9 @@ class EventsGetter():
 
             i += 1
             print 'Pushes left: %s' % (pushesCount - i)
-        print authors
-        with open('export_skills.json', 'w') as outfile:
-            json.dump(authors, outfile)
+
+            with open('export_skills.json', 'w') as outfile:
+                json.dump(authors, outfile)
 
         #self.print_to_csv(sorted(authors.iteritems(), key=operator.itemgetter(1), reverse=True))
 
