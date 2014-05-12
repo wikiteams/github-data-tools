@@ -224,6 +224,7 @@ def all_finished(threads):
 
 if __name__ == "__main__":
     global db
+    tt = 0;
     db = MongoClient(host='localhost', port=27017)
     threads = []
 
@@ -237,18 +238,23 @@ if __name__ == "__main__":
     threads.append(pg.start())
     ig = IssuesGetter(3, date_begin, date_end).start()
     threads.append(ig.start())
-    #threads.append(PullRequestsGetter(4).start())
+    prg = PullRequestsGetter(4, date_begin, date_end)
+    threads.append(prg.start())
     #threads.append(GollumGetter(5).start())
     #threads.append(TeamAddGetter(6).start())
     #threads.append(MemberGetter(7).start())
 
     while True:
-        time.sleep(10)
+        time.sleep(100)
+        tt=+100
         # check if all thread finish 1-month job
         if all_finished(threads):
             print 'month finished'
+            # if yes, dump data to csv
             dump_data()
             date_begin = date_end
             date_end = date_begin + relativedelta(months=+1)
-        # if yes, dump data to csv
-        # and start new month
+            # and start new month
+            all_advance(date_begin, date_end)
+        else:
+            print date_begin + ' still processing already for ' + tt + ' ms'
