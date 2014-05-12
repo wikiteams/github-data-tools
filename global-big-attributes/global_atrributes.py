@@ -6,6 +6,7 @@ import time
 from pymongo import MongoClient
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
+from intelliUser import GitUser
 
 __author__ = 'doctor ko'
 db = None
@@ -97,15 +98,21 @@ class FollowersGetter(threading.Thread):
                 if actor_login in users:
                     # update his info
                     print 'actor ' + actor_login + ' found'
+                    gu = users[actor_login]
                 else:
                     # create user info
+                    gu = GitUser(actor_login)
                     print 'adding actor ' + actor_login + ' login'
+                    users[actor_login] = gu
                 if target_login in users:
                     # update his info
-                    print 'actor ' + actor_login + ' found'
+                    print 'actor ' + target_login + ' found'
+                    gu = users[actor_login]
                 else:
                     # create user info
-                    print 'adding actor ' + actor_login + ' login'
+                    gu = GitUser(target_login)
+                    print 'adding actor ' + target_login + ' login'
+                    users[target_login] = gu
                 print 'Follows processed: ' + str(i)
         except StopIteration:
             print 'Cursor depleted'

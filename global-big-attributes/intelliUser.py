@@ -5,6 +5,11 @@ class GitUser():
     def __init__(self):
         self.data = []
 
+    def __init__(self, login):
+        self.data = []
+        self.key = login
+        self.login = login
+
     login = None
     fullname = None
     followers = None
