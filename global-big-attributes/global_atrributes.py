@@ -56,6 +56,9 @@ class UnicodeWriter:
 
 #1. Ilosc osob, ktore dany deweloper followuje; [FollowEvent]
 #2. Ilosc osob, ktore followuja dewelopera; [FollowEvent]
+# informacje o uzytkownikach bede przechwoywal w dictionary
+# o nazwie users, bedzie to informacja uzupelniajaca dla
+# glownego zbiornika danych - dictionary o repozytoriach
 class FollowersGetter(threading.Thread):
     global db
     finished = None
@@ -114,6 +117,54 @@ class FollowersGetter(threading.Thread):
                     print 'adding actor ' + target_login + ' login'
                     users[target_login] = gu
                 print 'Follows processed: ' + str(i)
+        except StopIteration:
+            print 'Cursor depleted'
+
+        self.finished = True
+
+
+# 3. Ilosc deweloperow, ktorzy sa w projektach
+# przez niego utworzonych [PushEvent]
+# 8. Czas spedzony w repo; [PushEvent]
+# 9. Ilosc committow(rozbic na skille) [PushEvent]
+class PushesGetter(threading.Thread):
+    global db
+    finished = None
+    date_from = None
+    date_to = None
+
+    def __init__(self, threadId, date_from, date_to):
+        self.threadId = threadId
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.date_from = date_from
+        self.date_to = date_to
+
+    def run(self):
+        print 'PushesGetter starts work...'
+        self.finished = False
+        self.get_data()
+
+    def is_finished(self):
+        return self.finished
+
+    def get_data(self):
+        i = 0
+
+        pushing = self.db.wikiteams.events.find({"created_at": {"$gte":
+                                                self.date_from,
+                                                 "lt": self.date_to}},
+                                                {"type": "PushEvent"}
+                                                ).sort({"created_at": 1})
+        try:
+            while(pushing.alive):
+                push = pushing.next()
+                print 'Working on push event no: ' + str(push['_id'])
+                print 'date of activity: ' + str(push['created_at'])
+                datep = push['created_at']
+                actor_login = push['actor']['login']
+                i += 1
+                print 'Pushes processed: ' + str(i)
         except StopIteration:
             print 'Cursor depleted'
 
