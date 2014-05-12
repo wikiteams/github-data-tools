@@ -80,6 +80,9 @@ class FollowersGetter(threading.Thread):
     def is_finished(self):
         return self.finished
 
+    def set_finished(self, finished):
+        self.finished = finished
+
     def get_data(self):
         i = 0
 
@@ -148,6 +151,9 @@ class PushesGetter(threading.Thread):
     def is_finished(self):
         return self.finished
 
+    def set_finished(self, finished):
+        self.finished = finished
+
     def get_data(self):
         i = 0
 
@@ -192,6 +198,9 @@ class IssuesGetter(threading.Thread):
     def is_finished(self):
         return self.finished
 
+    def set_finished(self, finished):
+        self.finished = finished
+
     def get_data(self):
         i = 0
 
@@ -221,6 +230,13 @@ def all_finished(threads):
         if not thread.is_finished():
             return False
     return are_finished
+
+
+def all_advance(threads, date_begin, date_end):
+    for thread in threads:
+        thread.set_finished(false)
+        thread.set_dates(date_begin, date_end)
+
 
 if __name__ == "__main__":
     global db
