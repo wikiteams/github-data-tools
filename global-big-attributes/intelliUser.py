@@ -8,8 +8,11 @@ class GitUser():
     login = None
     fullname = None
     followers = None
+    followers_date = None
     following = None
+    following_date = None
     repositories = None
+    repositories_date = None
 
     def setKey(self, key):
         self.key = key
@@ -32,17 +35,26 @@ class GitUser():
     def setFollowers(self, followers):
         self.followers = followers
 
+    def setFollowersDate(self, followers_date):
+        self.followers_date = followers_date
+
     def getFollowers(self):
         return self.followers
 
     def setFollowing(self, following):
         self.following = following
 
+    def setFollowingDate(self, following_date):
+        self.following_date = following_date
+
     def getFollowing(self):
         return self.following
 
     def setRepositories(self, repositories):
         self.repositories = repositories
+
+    def setRepositoriesgDate(self, repositories_date):
+        self.repositories_date = repositories_date
 
     def getRepositories(self):
         return self.repositories

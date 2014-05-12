@@ -94,6 +94,18 @@ class FollowersGetter(threading.Thread):
                 i += 1
                 target_login = follow['target']['login']
                 target_followers = follow['target']['followers']
+                if actor_login in users:
+                    # update his info
+                    print 'actor ' + actor_login + ' found'
+                else:
+                    # create user info
+                    print 'adding actor ' + actor_login + ' login'
+                if target_login in users:
+                    # update his info
+                    print 'actor ' + actor_login + ' found'
+                else:
+                    # create user info
+                    print 'adding actor ' + actor_login + ' login'
                 print 'Follows processed: ' + str(i)
         except StopIteration:
             print 'Cursor depleted'
