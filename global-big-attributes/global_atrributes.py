@@ -53,6 +53,8 @@ class UnicodeWriter:
             self.writerow(row)
 
 
+#1. Ilosc osob, ktore dany deweloper followuje; [FollowEvent]
+#2. Ilosc osob, ktore followuja dewelopera; [FollowEvent]
 class FollowersGetter(threading.Thread):
     global db
     finished = None
@@ -77,7 +79,11 @@ class FollowersGetter(threading.Thread):
     def get_data(self):
         i = 0
 
-        following = self.db.wikiteams.events.find({"created_at": {"$gte": self.date_from, "lt": self.date_to}}, {"type": "FollowEvent"}).sort({"created_at": 1})
+        following = self.db.wikiteams.events.find({"created_at": {"$gte":
+                                                  self.date_from,
+                                                  "lt": self.date_to}},
+                                                  {"type": "FollowEvent"}
+                                                  ).sort({"created_at": 1})
         try:
             while(following.alive):
                 follow = following.next()
