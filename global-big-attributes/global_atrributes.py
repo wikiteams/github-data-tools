@@ -171,6 +171,50 @@ class PushesGetter(threading.Thread):
         self.finished = True
 
 
+class IssuesGetter(threading.Thread):
+    global db
+    finished = None
+    date_from = None
+    date_to = None
+
+    def __init__(self, threadId, date_from, date_to):
+        self.threadId = threadId
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.date_from = date_from
+        self.date_to = date_to
+
+    def run(self):
+        print 'IssuesGetter starts work...'
+        self.finished = False
+        self.get_data()
+
+    def is_finished(self):
+        return self.finished
+
+    def get_data(self):
+        i = 0
+
+        issues = self.db.wikiteams.events.find({"created_at": {"$gte":
+                                                self.date_from,
+                                                 "lt": self.date_to}},
+                                                {"type": "IssuesEvent"}
+                                                ).sort({"created_at": 1})
+        try:
+            while(issues.alive):
+                issue = issues.next()
+                print 'Working on issue event no: ' + str(issue['_id'])
+                print 'date of activity: ' + str(issue['created_at'])
+                datep = issue['created_at']
+                actor_login = issue['actor']['login']
+                i += 1
+                print 'Issues processed: ' + str(i)
+        except StopIteration:
+            print 'Cursor depleted'
+
+        self.finished = True
+
+
 def all_finished(threads):
     are_finished = True
     for thread in threads:
@@ -191,7 +235,8 @@ if __name__ == "__main__":
     threads.append(fg.start())
     pg = PushesGetter(2, date_begin, date_end)
     threads.append(pg.start())
-    #threads.append(IssuesGetter(3).start())
+    ig = IssuesGetter(3, date_begin, date_end).start()
+    threads.append(ig.start())
     #threads.append(PullRequestsGetter(4).start())
     #threads.append(GollumGetter(5).start())
     #threads.append(TeamAddGetter(6).start())
