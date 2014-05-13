@@ -7,6 +7,7 @@ from pymongo import MongoClient
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
 from intelliUser import GitUser
+from intelliRepository import GitRepository
 
 __author__ = 'doctor ko'
 db = None
@@ -177,9 +178,13 @@ class PushesGetter(threading.Thread):
                     # update his info
                     print 'repo ' + repo_name + ' found'
                     gr = repos[repo_name]
+                    gr.addPushCount(1)
+                    gr.addCommitCount(payload_size)
                 else:
                     # create user info
-                    gr = GitRepository(repo_name)
+                    gr = GitRepository(repo_url, repo_name)
+                    gr.addPushCount(1)
+                    gr.addCommitCount(payload_size)
                     print 'adding repo ' + repo_name + ' name'
                     repos[repo_name] = gr
                 i += 1

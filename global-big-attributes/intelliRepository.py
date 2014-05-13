@@ -14,6 +14,13 @@ class GitRepository():
     def __init__(self):
         self.data = []
 
+    def __init__(self, url, key):
+        self.data = []
+        self.repository_url = url
+        self.repository_key = key
+        self.repository_owner = key.split('/')[0]
+        self.repository_name = key.split('/')[1]
+
     repository_branches = None
     repository_commits = None
     repository_contributors = None
@@ -62,9 +69,6 @@ class GitRepository():
 
     def getUrl(self):
         return self.repository_url
-
-    def purge(self):
-        'TO DO: implement this method'
 
     def setInitials(self, name, owner, watchers=None, forks=None):
         self.repository_name = name
