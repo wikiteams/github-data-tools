@@ -12,6 +12,7 @@ __author__ = 'doctor ko'
 db = None
 
 users = dict()
+repos = dict()
 
 
 class MyDialect(csv.Dialect):
@@ -168,7 +169,19 @@ class PushesGetter(threading.Thread):
                 print 'Working on push event no: ' + str(push['_id'])
                 print 'date of activity: ' + str(push['created_at'])
                 datep = push['created_at']
+                repo_url = push['repo']['url']
+                repo_name = push['repo']['name']
                 actor_login = push['actor']['login']
+                payload_size = push['payload']['size']
+                if repo_name in repos:
+                    # update his info
+                    print 'repo ' + repo_name + ' found'
+                    gr = repos[repo_name]
+                else:
+                    # create user info
+                    gr = GitRepository(repo_name)
+                    print 'adding repo ' + repo_name + ' name'
+                    repos[repo_name] = gr
                 i += 1
                 print 'Pushes processed: ' + str(i)
         except StopIteration:
@@ -205,10 +218,10 @@ class IssuesGetter(threading.Thread):
         i = 0
 
         issues = self.db.wikiteams.events.find({"created_at": {"$gte":
-                                                self.date_from,
-                                                 "lt": self.date_to}},
-                                                {"type": "IssuesEvent"}
-                                                ).sort({"created_at": 1})
+                                               self.date_from,
+                                               "lt": self.date_to}},
+                                               {"type": "IssuesEvent"}
+                                               ).sort({"created_at": 1})
         try:
             while(issues.alive):
                 issue = issues.next()
@@ -240,7 +253,7 @@ def all_advance(threads, date_begin, date_end):
 
 if __name__ == "__main__":
     global db
-    tt = 0;
+    tt = 0
     db = MongoClient(host='localhost', port=27017)
     threads = []
 
@@ -252,7 +265,7 @@ if __name__ == "__main__":
     threads.append(fg.start())
     pg = PushesGetter(2, date_begin, date_end)
     threads.append(pg.start())
-    ig = IssuesGetter(3, date_begin, date_end).start()
+    ig = IssuesGetter(3, date_begin, date_end)
     threads.append(ig.start())
     prg = PullRequestsGetter(4, date_begin, date_end)
     threads.append(prg.start())
@@ -262,7 +275,7 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(100)
-        tt=+100
+        tt += 100
         # check if all thread finish 1-month job
         if all_finished(threads):
             print 'month finished'
