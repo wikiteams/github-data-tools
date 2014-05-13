@@ -10,7 +10,6 @@ from intelliUser import GitUser
 from intelliRepository import GitRepository
 
 __author__ = 'doctor ko'
-db = None
 
 users = dict()
 repos = dict()
@@ -88,11 +87,11 @@ class FollowersGetter(threading.Thread):
     def get_data(self):
         i = 0
 
-        following = self.db.wikiteams.events.find({"created_at": {"$gte":
-                                                  self.date_from,
-                                                  "lt": self.date_to}},
-                                                  {"type": "FollowEvent"}
-                                                  ).sort({"created_at": 1})
+        following = db.wikiteams.events.find({"created_at": {"$gte":
+                                              self.date_from,
+                                              "lt": self.date_to}},
+                                             {"type": "FollowEvent"}
+                                             ).sort({"created_at": 1})
         try:
             while(following.alive):
                 follow = following.next()
@@ -159,11 +158,11 @@ class PushesGetter(threading.Thread):
     def get_data(self):
         i = 0
 
-        pushing = self.db.wikiteams.events.find({"created_at": {"$gte":
-                                                self.date_from,
-                                                 "lt": self.date_to}},
-                                                {"type": "PushEvent"}
-                                                ).sort({"created_at": 1})
+        pushing = db.wikiteams.events.find({"created_at": {"$gte":
+                                           self.date_from,
+                                           "lt": self.date_to}},
+                                           {"type": "PushEvent"}
+                                           ).sort({"created_at": 1})
         try:
             while(pushing.alive):
                 push = pushing.next()
@@ -189,6 +188,53 @@ class PushesGetter(threading.Thread):
                     repos[repo_name] = gr
                 i += 1
                 print 'Pushes processed: ' + str(i)
+        except StopIteration:
+            print 'Cursor depleted'
+
+        self.finished = True
+
+
+class PullRequestsGetter(threading.Thread):
+    global db
+    finished = None
+    date_from = None
+    date_to = None
+
+    def __init__(self, threadId, date_from, date_to):
+        self.threadId = threadId
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.date_from = date_from
+        self.date_to = date_to
+
+    def run(self):
+        print 'PullRequestsGetter starts work...'
+        self.finished = False
+        self.get_data()
+
+    def is_finished(self):
+        return self.finished
+
+    def set_finished(self, finished):
+        self.finished = finished
+
+    def get_data(self):
+        i = 0
+
+        issues = db.wikiteams.events.find({"created_at": {"$gte":
+                                          self.date_from,
+                                          "lt": self.date_to}},
+                                          {"type": "PullRequestEvent"}
+                                          ).sort({"created_at": 1})
+        try:
+            while(issues.alive):
+                issue = issues.next()
+                print 'Working on issue event no: ' + str(issue['_id'])
+                print 'date of activity: ' + str(issue['created_at'])
+                datep = issue['created_at']
+                actor_login = issue['actor']['login']
+                i += 1
+                print 'Issues processed: ' + str(i)
         except StopIteration:
             print 'Cursor depleted'
 
@@ -222,11 +268,11 @@ class IssuesGetter(threading.Thread):
     def get_data(self):
         i = 0
 
-        issues = self.db.wikiteams.events.find({"created_at": {"$gte":
-                                               self.date_from,
-                                               "lt": self.date_to}},
-                                               {"type": "IssuesEvent"}
-                                               ).sort({"created_at": 1})
+        issues = db.wikiteams.events.find({"created_at": {"$gte":
+                                           self.date_from,
+                                           "lt": self.date_to}},
+                                          {"type": "IssuesEvent"}
+                                          ).sort({"created_at": 1})
         try:
             while(issues.alive):
                 issue = issues.next()
@@ -265,6 +311,8 @@ if __name__ == "__main__":
     d1 = '2011-02-12T00:00:00Z'
     date_begin = dateutil.parser.parse(d1)
     date_end = date_begin + relativedelta(months=+1)
+    print 'starting from date: ' + str(date_begin)
+    print 'ending on date: ' + str(date_end)
 
     fg = FollowersGetter(1, date_begin, date_end)
     threads.append(fg.start())
@@ -274,7 +322,8 @@ if __name__ == "__main__":
     threads.append(ig.start())
     prg = PullRequestsGetter(4, date_begin, date_end)
     threads.append(prg.start())
-    #threads.append(GollumGetter(5).start())
+    gg = GollumGetter(5, date_begin, date_end)
+    threads.append(gg.start())
     #threads.append(TeamAddGetter(6).start())
     #threads.append(MemberGetter(7).start())
 
@@ -289,6 +338,8 @@ if __name__ == "__main__":
             date_begin = date_end
             date_end = date_begin + relativedelta(months=+1)
             # and start new month
+            print 'advancing the `from date`: ' + date_begin
+            print 'advancing the `ending on date`: ' + date_end
             all_advance(date_begin, date_end)
         else:
             print date_begin + ' still processing already for ' + tt + ' ms'
