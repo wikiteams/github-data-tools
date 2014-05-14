@@ -107,19 +107,25 @@ class FollowersGetter(threading.Thread):
                     # update his info
                     print 'actor ' + actor_login + ' found'
                     gu = users[actor_login]
+                    #gu_followed = getOrCreate(target_login)
+                    gu.addFollowing(target_login)
+                    #gu_followed.addFollower(gu)
                 else:
                     # create user info
                     gu = GitUser(actor_login)
                     print 'adding actor ' + actor_login + ' login'
+                    gu.addFollowing(target_login)
                     users[actor_login] = gu
                 if target_login in users:
                     # update his info
                     print 'actor ' + target_login + ' found'
-                    gu = users[actor_login]
+                    gu = users[target_login]
+                    gu.addFollower(actor_login)
                 else:
                     # create user info
                     gu = GitUser(target_login)
                     print 'adding actor ' + target_login + ' login'
+                    gu.addFollower(actor_login)
                     users[target_login] = gu
                 print 'Follows processed: ' + str(i)
         except StopIteration:
@@ -319,8 +325,8 @@ class GollumGetter(threading.Thread):
         gollums = db.wikiteams.events.find({"created_at": {"$gte":
                                            self.date_from,
                                            "lt": self.date_to}},
-                                          {"type": "GollumEvent"}
-                                          ).sort({"created_at": 1})
+                                           {"type": "GollumEvent"}
+                                           ).sort({"created_at": 1})
         try:
             while(gollums.alive):
                 gollum = gollums.next()

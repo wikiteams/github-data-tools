@@ -12,9 +12,9 @@ class GitUser():
 
     login = None
     fullname = None
-    followers = None
+    followers = set()
     followers_date = None
-    following = None
+    following = set()
     following_date = None
     repositories = None
     repositories_date = None
@@ -40,6 +40,9 @@ class GitUser():
     def setFollowers(self, followers):
         self.followers = followers
 
+    def addFollower(self, follower):
+        self.follower.add(follower)
+
     def setFollowersDate(self, followers_date):
         self.followers_date = followers_date
 
@@ -48,6 +51,9 @@ class GitUser():
 
     def setFollowing(self, following):
         self.following = following
+
+    def addFollowing(self, followed):
+        self.following.add(followed)
 
     def setFollowingDate(self, following_date):
         self.following_date = following_date
