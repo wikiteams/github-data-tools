@@ -3,6 +3,7 @@ import cStringIO
 import csv
 import threading
 import time
+import scream
 from pymongo import MongoClient
 import dateutil.parser
 from dateutil.relativedelta import relativedelta
@@ -74,7 +75,7 @@ class FollowersGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        print 'FollowersGetter starts work...'
+        scream.say('FollowersGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -89,14 +90,14 @@ class FollowersGetter(threading.Thread):
 
         following = db.wikiteams.events.find({"created_at": {"$gte":
                                               self.date_from,
-                                              "lt": self.date_to}},
-                                             {"type": "FollowEvent"}
-                                             ).sort({"created_at": 1})
+                                              "$lt": self.date_to},
+                                             "type": "FollowEvent"}
+                                             ).sort([("created_at", 1)])
         try:
             while(following.alive):
                 follow = following.next()
-                print 'Working on follow event no: ' + str(follow['_id'])
-                print 'date of activity: ' + str(follow['created_at'])
+                scream.say('Working on follow event no: ' + str(follow['_id']))
+                scream.say('date of activity: ' + str(follow['created_at']))
                 datep = follow['created_at']
                 actor_login = follow['actor']['login']
                 i += 1
@@ -152,7 +153,7 @@ class PushesGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        print 'PushesGetter starts work...'
+        scream.say('PushesGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -167,13 +168,14 @@ class PushesGetter(threading.Thread):
 
         pushing = db.wikiteams.events.find({"created_at": {"$gte":
                                            self.date_from,
-                                           "lt": self.date_to}},
-                                           {"type": "PushEvent"}
-                                           ).sort({"created_at": 1})
+                                           "$lt": self.date_to},
+                                           "type": "PushEvent"},
+                                           await_data=True, partial=False).sort([("created_at", 1)])
         try:
             while(pushing.alive):
                 push = pushing.next()
                 print 'Working on push event no: ' + str(push['_id'])
+                scream.say(push)
                 print 'date of activity: ' + str(push['created_at'])
                 datep = push['created_at']
                 repo_url = push['repo']['url']
@@ -215,7 +217,7 @@ class PullRequestsGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        print 'PullRequestsGetter starts work...'
+        scream.say('PullRequestsGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -230,9 +232,9 @@ class PullRequestsGetter(threading.Thread):
 
         issues = db.wikiteams.events.find({"created_at": {"$gte":
                                           self.date_from,
-                                          "lt": self.date_to}},
-                                          {"type": "PullRequestEvent"}
-                                          ).sort({"created_at": 1})
+                                          "$lt": self.date_to},
+                                          "type": "PullRequestEvent"}
+                                          ).sort([("created_at", 1)])
         try:
             while(issues.alive):
                 issue = issues.next()
@@ -262,7 +264,7 @@ class IssuesGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        print 'IssuesGetter starts work...'
+        scream.say('IssuesGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -277,9 +279,9 @@ class IssuesGetter(threading.Thread):
 
         issues = db.wikiteams.events.find({"created_at": {"$gte":
                                            self.date_from,
-                                           "lt": self.date_to}},
-                                          {"type": "IssuesEvent"}
-                                          ).sort({"created_at": 1})
+                                           "$lt": self.date_to},
+                                          "type": "IssuesEvent"}
+                                          ).sort([("created_at", 1)])
         try:
             while(issues.alive):
                 issue = issues.next()
@@ -324,9 +326,9 @@ class GollumGetter(threading.Thread):
 
         gollums = db.wikiteams.events.find({"created_at": {"$gte":
                                            self.date_from,
-                                           "lt": self.date_to}},
-                                           {"type": "GollumEvent"}
-                                           ).sort({"created_at": 1})
+                                           "$lt": self.date_to},
+                                           "type": "GollumEvent"}
+                                           ).sort([("created_at", 1)])
         try:
             while(gollums.alive):
                 gollum = gollums.next()
