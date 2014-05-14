@@ -102,6 +102,7 @@ class FollowersGetter(threading.Thread):
                 i += 1
                 target_login = follow['target']['login']
                 target_followers = follow['target']['followers']
+                target_repos = follow['target']['repos']
                 if actor_login in users:
                     # update his info
                     print 'actor ' + actor_login + ' found'
@@ -282,6 +283,81 @@ class IssuesGetter(threading.Thread):
                 actor_login = issue['actor']['login']
                 i += 1
                 print 'Issues processed: ' + str(i)
+        except StopIteration:
+            print 'Cursor depleted'
+
+        self.finished = True
+
+
+class GollumGetter(threading.Thread):
+    global db
+    finished = None
+    date_from = None
+    date_to = None
+
+    def __init__(self, threadId, date_from, date_to):
+        self.threadId = threadId
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.date_from = date_from
+        self.date_to = date_to
+
+    def run(self):
+        print 'GollumGetter starts work...'
+        self.finished = False
+        self.get_data()
+
+    def is_finished(self):
+        return self.finished
+
+    def set_finished(self, finished):
+        self.finished = finished
+
+    def get_data(self):
+        i = 0
+
+        gollums = db.wikiteams.events.find({"created_at": {"$gte":
+                                           self.date_from,
+                                           "lt": self.date_to}},
+                                          {"type": "GollumEvent"}
+                                          ).sort({"created_at": 1})
+        try:
+            while(gollums.alive):
+                gollum = gollums.next()
+                print 'Working on gollum event no: ' + str(gollum['_id'])
+                print 'date of activity: ' + str(gollum['created_at'])
+                datep = gollum['created_at']
+                if gollum['actor'] is str:
+                    actor_login = gollum['actor']
+                else:
+                    actor_login = gollum['actor']['login']
+                if 'repo' in gollum['payload']:
+                    repo_name = gollum['payload']['repo']
+                else:
+                    repo_is_fork = gollum['repository']['fork']
+                    repo_watchers = gollum['repository']['watchers']
+                    repo_description = gollum['repository']['description']
+                    repo_language = gollum['repository']['language']
+                    repo_has_downloads = gollum['repository']['has_downloads']
+                    repo_url = gollum['repository']['url']
+                    repo_stargazers = gollum['repository']['stargazers']
+                    repo_created_at = gollum['repository']['created_at']
+                    repo_master_branch = gollum['repository']['master_branch']
+                    repo_is_private = gollum['repository']['private']
+                    repo_pushed_at = gollum['repository']['pushed_at']
+                    repo_open_issues = gollum['repository']['open_issues']
+                    repo_has_wiki = gollum['repository']['has_wiki']
+                    repo_organization = gollum['repository']['organization']
+                    repo_owner = gollum['repository']['owner']
+                    repo_has_issues = gollum['repository']['has_issues']
+                    repo_forks = gollum['repository']['forks']
+                    repo_size = gollum['repository']['size']
+                    repo_homepage = gollum['repository']['homepage']
+                    repo_id = gollum['repository']['id']
+                    repo_name = gollum['repository']['name']
+
+                i += 1
+                print 'Gollums processed: ' + str(i)
         except StopIteration:
             print 'Cursor depleted'
 
