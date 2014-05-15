@@ -16,8 +16,15 @@ class GitUser():
     followers_date = None
     following = set()
     following_date = None
-    repositories = None
+
+    followers_count = 0
+    repositories_count = 0
+
+    repositories = set()
     repositories_date = None
+
+    his_repos_how_many_developers = 0
+    contributing_to = set()
 
     def setKey(self, key):
         self.key = key
@@ -69,3 +76,9 @@ class GitUser():
 
     def getRepositories(self):
         return self.repositories
+
+    def setFollowersCount(self, followers_count):
+        self.followers_count = followers_count
+
+    def setRepositoriesCount(self, repositories_count):
+        self.repositories_count = repositories_count

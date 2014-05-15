@@ -154,12 +154,16 @@ class FollowersGetter(threading.Thread):
                     gu = users[target_login]
                     gu.addFollower(actor_login)
                     gu.setFollowerDate(datep)
+                    gu.setFollowersCount(target_followers)
+                    gu.setRepositoriesCount(target_repos)
                 else:
                     # create user info
                     gu = GitUser(target_login)
                     scream.cout('adding actor ' + target_login + ' login')
                     gu.addFollower(actor_login)
                     gu.setFollowerDate(datep)
+                    gu.setFollowersCount(target_followers)
+                    gu.setRepositoriesCount(target_repos)
                     users[target_login] = gu
                 print 'Follows processed: ' + str(i)
         except StopIteration:
@@ -170,8 +174,15 @@ class FollowersGetter(threading.Thread):
 
 # 3. Ilosc deweloperow, ktorzy sa w projektach
 # przez niego utworzonych [PushEvent]
-# 8. Czas spedzony w repo; [PushEvent]
-# 9. Ilosc committow(rozbic na skille) [PushEvent]
+# 6. Ilosc repo, ktorych nie tworzyl, w ktorych jest contributorem [PushEvent]
+# 8. Czas spedzony w repo [PushEvent]
+# 9. Ilosc committow (rozbic na skille) [PushEvent]
+#   a. Ilosc commitow globalnie
+#   b. Ilosc commitow w repo
+#   c. Stosunek b/a
+# 13. Czas od ostatniego commitu [PushEvent]
+# 14. Czas od pierwszego commitu [PushEvent]
+# 15. Odstep czasu pomiedzy commitami [PushEvent]
 class PushesGetter(threading.Thread):
     global db
     finished = None
