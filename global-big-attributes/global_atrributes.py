@@ -14,6 +14,25 @@ __author__ = 'doctor ko'
 
 users = dict()
 repos = dict()
+contributions = dict()
+
+
+def report_contribution(repo_name, actor_login, commits_count):
+    if repo_name in contributions:
+        scream.say('reporting contribution')
+        contributors = contributions[repo_name]
+        if actor_login in contributors:
+            scream.say('found that existing contributor added smth new')
+            contributors[actor_login]['pushes'] += 1
+            contributors[actor_login]['commits'] += commits_count
+        else:
+            scream.say('new contributor detected')
+            contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
+    else:
+        scream.say('reporting contribution to unknown repo')
+        contributors = dict()
+        contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
+        contributions[repo_name] = contributors
 
 
 class MyDialect(csv.Dialect):
@@ -106,7 +125,7 @@ class FollowersGetter(threading.Thread):
                 target_repos = follow['target']['repos']
                 if actor_login in users:
                     # update his info
-                    print 'actor ' + actor_login + ' found'
+                    scream.cout('actor ' + actor_login + ' found')
                     gu = users[actor_login]
                     #gu_followed = getOrCreate(target_login)
                     gu.addFollowing(target_login)
@@ -115,22 +134,22 @@ class FollowersGetter(threading.Thread):
                 else:
                     # create user info
                     gu = GitUser(actor_login)
-                    print 'adding actor ' + actor_login + ' login'
+                    scream.cout('adding actor ' + actor_login + ' login')
                     gu.addFollowing(target_login)
                     gu.setFollowingDate(datep)
                     users[actor_login] = gu
                 if target_login in users:
                     # update his info
-                    print 'actor ' + target_login + ' found'
+                    scream.cout('actor ' + target_login + ' found')
                     gu = users[target_login]
                     gu.addFollower(actor_login)
                     gu.setFollowerDate(datep)
                 else:
                     # create user info
                     gu = GitUser(target_login)
-                    print 'adding actor ' + target_login + ' login'
+                    scream.cout('adding actor ' + target_login + ' login')
                     gu.addFollower(actor_login)
-                    gu.setFollowingDate(datep)
+                    gu.setFollowerDate(datep)
                     users[target_login] = gu
                 print 'Follows processed: ' + str(i)
         except StopIteration:
@@ -174,7 +193,7 @@ class PushesGetter(threading.Thread):
                                            self.date_from,
                                            "$lt": self.date_to},
                                            "type": "PushEvent"},
-                                           await_data=True, partial=False).sort([("created_at", 1)])
+                                           ).sort([("created_at", 1)])
         try:
             while(pushing.alive):
                 push = pushing.next()
@@ -192,15 +211,17 @@ class PushesGetter(threading.Thread):
                     gr = repos[repo_name]
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)
+                    report_contribution(repo_name, actor_login, payload_size)
                 else:
                     # create user info
                     gr = GitRepository(repo_url, repo_name)
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)
-                    print 'adding repo ' + repo_name + ' name'
+                    scream.say('adding repo ' + repo_name + ' name')
                     repos[repo_name] = gr
+                    report_contribution(repo_name, actor_login, payload_size)
                 i += 1
-                print 'Pushes processed: ' + str(i)
+                scream.say('Pushes processed: ' + str(i))
         except StopIteration:
             print 'Cursor depleted'
 
@@ -393,7 +414,7 @@ def all_advance(threads, date_begin, date_end):
 if __name__ == "__main__":
     global db
     tt = 0
-    db = MongoClient(host='localhost', port=27017)
+    db = MongoClient(host='10.4.4.21', port=27017)
     threads = []
 
     d1 = '2011-02-12T00:00:00Z'
