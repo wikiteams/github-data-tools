@@ -41,8 +41,8 @@ def report_contribution(repo_name, actor_login, commits_count):
         existing_commit_count = 0
         contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
         contributions[repo_name] = contributors
-    assert existing_push_count == contributors[repo_name][actor_login]['pushes'] - 1
-    assert existing_commit_count == contributors[repo_name][actor_login]['commits'] - commits_count
+    assert existing_push_count == contributions[repo_name][actor_login]['pushes'] - 1
+    assert existing_commit_count == contributions[repo_name][actor_login]['commits'] - commits_count
 
 
 class MyDialect(csv.Dialect):
@@ -424,7 +424,7 @@ def all_advance(threads, date_begin, date_end):
 if __name__ == "__main__":
     global db
     tt = 0
-    db = MongoClient(host='10.4.4.21', port=27017)
+    db = MongoClient(host='localhost', port=27017)
     threads = []
 
     d1 = '2011-02-12T00:00:00Z'
