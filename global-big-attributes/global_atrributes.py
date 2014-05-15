@@ -9,12 +9,14 @@ import dateutil.parser
 from dateutil.relativedelta import relativedelta
 from intelliUser import GitUser
 from intelliRepository import GitRepository
+import gexf
 
 __author__ = 'doctor ko'
 
 users = dict()
 repos = dict()
 contributions = dict()
+graph = None
 
 
 def report_contribution(repo_name, actor_login, commits_count):
@@ -92,6 +94,8 @@ class UnicodeWriter:
 # glownego zbiornika danych - dictionary o repozytoriach
 class FollowersGetter(threading.Thread):
     global db
+    global graph
+
     finished = None
     date_from = None
     date_to = None
@@ -125,8 +129,8 @@ class FollowersGetter(threading.Thread):
         try:
             while(following.alive):
                 follow = following.next()
-                scream.cout('Working on follow event no: ' + str(follow['_id']))
-                scream.cout('date of activity: ' + str(follow['created_at']))
+                scream.cout('Working on `Follow Event` no: ' + str(follow['_id']))
+                scream.cout('Date of activity: ' + str(follow['created_at']))
                 datep = follow['created_at']
                 actor_login = follow['actor']['login']
                 i += 1
@@ -137,10 +141,9 @@ class FollowersGetter(threading.Thread):
                     # update his info
                     scream.cout('actor ' + actor_login + ' found')
                     gu = users[actor_login]
-                    #gu_followed = getOrCreate(target_login)
                     gu.addFollowing(target_login)
                     gu.setFollowingDate(datep)
-                    #gu_followed.addFollower(gu)
+                    assert graph.nodeExists(id=actor_login)
                 else:
                     # create user info
                     gu = GitUser(actor_login)
@@ -148,6 +151,7 @@ class FollowersGetter(threading.Thread):
                     gu.addFollowing(target_login)
                     gu.setFollowingDate(datep)
                     users[actor_login] = gu
+                    graph.addNode(id=actor_login)
                 if target_login in users:
                     # update his info
                     scream.cout('actor ' + target_login + ' found')
@@ -156,6 +160,7 @@ class FollowersGetter(threading.Thread):
                     gu.setFollowerDate(datep)
                     gu.setFollowersCount(target_followers)
                     gu.setRepositoriesCount(target_repos)
+                    assert graph.nodeExists(id=target_login)
                 else:
                     # create user info
                     gu = GitUser(target_login)
@@ -165,9 +170,10 @@ class FollowersGetter(threading.Thread):
                     gu.setFollowersCount(target_followers)
                     gu.setRepositoriesCount(target_repos)
                     users[target_login] = gu
-                print 'Follows processed: ' + str(i)
+                    graph.addNode(id=target_login)
+                print 'Follows processed in no of: ' + str(i)
         except StopIteration:
-            print 'Cursor depleted'
+            print 'Cursor for FollowEvents depleted'
 
         self.finished = True
 
@@ -434,6 +440,10 @@ def all_advance(threads, date_begin, date_end):
 
 if __name__ == "__main__":
     global db
+    global graph
+
+    gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
+    graph = gexf_file.addGraph("directed", "dynamic", "github")
     tt = 0
     db = MongoClient(host='localhost', port=27017)
     threads = []
