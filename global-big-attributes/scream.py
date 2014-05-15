@@ -21,6 +21,10 @@ def say(s):
         print str(s)
 
 
+def cout(s):
+    print str(s)
+
+
 def ssay(s):
     if intelliTag_verbose:
         print str(s)

@@ -75,7 +75,7 @@ class FollowersGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        scream.say('FollowersGetter starts work...')
+        scream.cout('FollowersGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -96,8 +96,8 @@ class FollowersGetter(threading.Thread):
         try:
             while(following.alive):
                 follow = following.next()
-                scream.say('Working on follow event no: ' + str(follow['_id']))
-                scream.say('date of activity: ' + str(follow['created_at']))
+                scream.cout('Working on follow event no: ' + str(follow['_id']))
+                scream.cout('date of activity: ' + str(follow['created_at']))
                 datep = follow['created_at']
                 actor_login = follow['actor']['login']
                 i += 1
@@ -110,23 +110,27 @@ class FollowersGetter(threading.Thread):
                     gu = users[actor_login]
                     #gu_followed = getOrCreate(target_login)
                     gu.addFollowing(target_login)
+                    gu.setFollowingDate(datep)
                     #gu_followed.addFollower(gu)
                 else:
                     # create user info
                     gu = GitUser(actor_login)
                     print 'adding actor ' + actor_login + ' login'
                     gu.addFollowing(target_login)
+                    gu.setFollowingDate(datep)
                     users[actor_login] = gu
                 if target_login in users:
                     # update his info
                     print 'actor ' + target_login + ' found'
                     gu = users[target_login]
                     gu.addFollower(actor_login)
+                    gu.setFollowerDate(datep)
                 else:
                     # create user info
                     gu = GitUser(target_login)
                     print 'adding actor ' + target_login + ' login'
                     gu.addFollower(actor_login)
+                    gu.setFollowingDate(datep)
                     users[target_login] = gu
                 print 'Follows processed: ' + str(i)
         except StopIteration:
@@ -153,7 +157,7 @@ class PushesGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        scream.say('PushesGetter starts work...')
+        scream.cout('PushesGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -174,9 +178,9 @@ class PushesGetter(threading.Thread):
         try:
             while(pushing.alive):
                 push = pushing.next()
-                print 'Working on push event no: ' + str(push['_id'])
+                scream.cout('Working on push event no: ' + str(push['_id']))
                 scream.say(push)
-                print 'date of activity: ' + str(push['created_at'])
+                scream.cout('date of activity: ' + str(push['created_at']))
                 datep = push['created_at']
                 repo_url = push['repo']['url']
                 repo_name = push['repo']['name']
@@ -184,7 +188,7 @@ class PushesGetter(threading.Thread):
                 payload_size = push['payload']['size']
                 if repo_name in repos:
                     # update his info
-                    print 'repo ' + repo_name + ' found'
+                    scream.say('repo ' + repo_name + ' found')
                     gr = repos[repo_name]
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)

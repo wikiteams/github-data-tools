@@ -10,6 +10,8 @@ class GitRepository():
 
     element_type = 'Team'
     key = None
+    push_count = 0
+    commit_count = 0
 
     def __init__(self):
         self.data = []
@@ -69,6 +71,12 @@ class GitRepository():
 
     def getUrl(self):
         return self.repository_url
+
+    def addPushCount(self, how_many):
+        self.push_count += how_many
+
+    def addCommitCount(self, how_many):
+        self.commit_count += how_many
 
     def setInitials(self, name, owner, watchers=None, forks=None):
         self.repository_name = name
