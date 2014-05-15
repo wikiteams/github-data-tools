@@ -18,21 +18,31 @@ contributions = dict()
 
 
 def report_contribution(repo_name, actor_login, commits_count):
+    existing_push_count = None
+    existing_commit_count = None
     if repo_name in contributions:
-        scream.say('reporting contribution')
+        scream.say('reporting contribution to existing repository')
         contributors = contributions[repo_name]
         if actor_login in contributors:
             scream.say('found that existing contributor added smth new')
+            existing_push_count = contributors[actor_login]['pushes']
             contributors[actor_login]['pushes'] += 1
+            existing_commit_count = contributors[actor_login]['commits']
             contributors[actor_login]['commits'] += commits_count
         else:
             scream.say('new contributor detected')
+            existing_push_count = 0
+            existing_commit_count = 0
             contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
     else:
         scream.say('reporting contribution to unknown repo')
         contributors = dict()
+        existing_push_count = 0
+        existing_commit_count = 0
         contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
         contributions[repo_name] = contributors
+    assert existing_push_count == contributors[repo_name][actor_login]['pushes'] - 1
+    assert existing_commit_count == contributors[repo_name][actor_login]['commits'] - commits_count
 
 
 class MyDialect(csv.Dialect):
