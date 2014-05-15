@@ -213,7 +213,7 @@ class PushesGetter(threading.Thread):
         pushing = db.wikiteams.events.find({"created_at": {"$gte":
                                            self.date_from,
                                            "$lt": self.date_to},
-                                           "type": "PushEvent"},
+                                           "type": "PushEvent"}
                                            ).sort([("created_at", 1)])
         try:
             while(pushing.alive):
@@ -276,22 +276,22 @@ class PullRequestsGetter(threading.Thread):
     def get_data(self):
         i = 0
 
-        issues = db.wikiteams.events.find({"created_at": {"$gte":
-                                          self.date_from,
-                                          "$lt": self.date_to},
-                                          "type": "PullRequestEvent"}
-                                          ).sort([("created_at", 1)])
+        pullrequests = db.wikiteams.events.find({"created_at": {"$gte":
+                                                self.date_from,
+                                                "$lt": self.date_to},
+                                                "type": "PullRequestEvent"}
+                                                ).sort([("created_at", 1)])
         try:
-            while(issues.alive):
-                issue = issues.next()
-                print 'Working on issue event no: ' + str(issue['_id'])
-                print 'date of activity: ' + str(issue['created_at'])
-                datep = issue['created_at']
-                actor_login = issue['actor']['login']
+            while(pullrequests.alive):
+                pullrequest = pullrequests.next()
+                scream.say('Working on issue event no: ' + str(pullrequest['_id']))
+                scream.say('date of activity: ' + str(pullrequest['created_at']))
+                datep = pullrequest['created_at']
+                actor_login = pullrequest['actor']['login']
                 i += 1
-                print 'Issues processed: ' + str(i)
+                scream.say('Pull requests processed: ' + str(i))
         except StopIteration:
-            print 'Cursor depleted'
+            scream.cout('Cursor depleted')
 
         self.finished = True
 
