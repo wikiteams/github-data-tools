@@ -2,22 +2,23 @@ import sys
 import logging
 import logging.handlers
 import logging.config
+import __builtin__
 
 DISABLE__STD = False
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
 
-intelliTag_verbose = True
+intelliTag_verbose = False
 
 
 def log(s):
-    if intelliTag_verbose:
+    if intelliTag_verbose or __builtin__.verbose:
         logger.info(str(s))
 
 
 def say(s):
-    if intelliTag_verbose:
+    if intelliTag_verbose or __builtin__.verbose:
         print str(s)
 
 
@@ -26,7 +27,7 @@ def cout(s):
 
 
 def ssay(s):
-    if intelliTag_verbose:
+    if intelliTag_verbose or __builtin__.verbose:
         print str(s)
         logger.info(str(s))
 

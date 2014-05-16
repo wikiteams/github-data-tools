@@ -10,6 +10,9 @@ from dateutil.relativedelta import relativedelta
 from intelliUser import GitUser
 from intelliRepository import GitRepository
 import gexf
+import getopt
+import sys
+import __builtin__
 
 __author__ = 'doctor ko'
 
@@ -17,6 +20,12 @@ users = dict()
 repos = dict()
 contributions = dict()
 graph = None
+
+
+def usage():
+    f = open('usage.txt', 'r')
+    for line in f:
+        print line
 
 
 def report_contribution(repo_name, actor_login, commits_count):
@@ -174,6 +183,10 @@ class FollowersGetter(threading.Thread):
                 print 'Follows processed in no of: ' + str(i)
         except StopIteration:
             print 'Cursor for FollowEvents depleted'
+        except KeyError, k:
+            print str(k)
+            print follow
+            sys.exit(-1)
 
         self.finished = True
 
@@ -230,7 +243,10 @@ class PushesGetter(threading.Thread):
                 datep = push['created_at']
                 repo_url = push['repo']['url']
                 repo_name = push['repo']['name']
-                actor_login = push['actor']['login']
+                if 'login' in push['actor']:
+                    actor_login = push['actor']['login']
+                else:
+                    actor_login = push['payload']['actor']
                 payload_size = push['payload']['size']
                 if repo_name in repos:
                     # update his info
@@ -251,6 +267,10 @@ class PushesGetter(threading.Thread):
                 scream.say('Pushes processed: ' + str(i))
         except StopIteration:
             print 'Cursor depleted'
+        except KeyError, k:
+            print str(k)
+            print push
+            sys.exit(-1)
 
         self.finished = True
 
@@ -269,7 +289,7 @@ class PullRequestsGetter(threading.Thread):
         self.date_to = date_to
 
     def run(self):
-        scream.say('PullRequestsGetter starts work...')
+        scream.cout('PullRequestsGetter starts work...')
         self.finished = False
         self.get_data()
 
@@ -290,14 +310,20 @@ class PullRequestsGetter(threading.Thread):
         try:
             while(pullrequests.alive):
                 pullrequest = pullrequests.next()
-                scream.say('Working on issue event no: ' + str(pullrequest['_id']))
-                scream.say('date of activity: ' + str(pullrequest['created_at']))
+                scream.cout('Working on `Pull Request Event` no: ' + str(pullrequest['_id']))
+                scream.say(pullrequest)
+                scream.cout('date of activity: ' + str(pullrequest['created_at']))
                 datep = pullrequest['created_at']
-                actor_login = pullrequest['actor']['login']
+                if 'login' in pullrequest['actor']:
+                    actor_login = pullrequest['actor']['login']
+                else:
+                    actor_login = pullrequest['payload']['actor']
+                pullrequest_repo_name = pullrequest['payload']['repo']
+                pullrequest_commit_count = pullrequest['payload']['pull_request']['commits']
                 i += 1
                 scream.say('Pull requests processed: ' + str(i))
         except StopIteration:
-            scream.cout('Cursor depleted')
+            scream.cout('Cursor for Pull Requests depleted')
 
         self.finished = True
 
@@ -441,6 +467,25 @@ def all_advance(threads, date_begin, date_end):
 if __name__ == "__main__":
     global db
     global graph
+    __builtin__.verbose = False
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hu:v", ["help", "utf8=", "verbose"])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print str(err)  # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-v", "--verbose"):
+            __builtin__.verbose = True
+            scream.ssay('Enabling verbose mode.')
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-u", "--utf8"):
+            use_utf8 = (a not in ['false', 'False'])
 
     gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
     graph = gexf_file.addGraph("directed", "dynamic", "github")
