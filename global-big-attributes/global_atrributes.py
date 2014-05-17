@@ -180,6 +180,7 @@ class FollowersGetter(threading.Thread):
                     gu.setRepositoriesCount(target_repos)
                     users[target_login] = gu
                     graph.addNode(id=target_login)
+                graph.addEdge(source=actor_login, target=target_login, start=datep, label='follows')
                 print 'Follows processed in no of: ' + str(i)
         except StopIteration:
             print 'Cursor for FollowEvents depleted'
@@ -462,6 +463,13 @@ def all_advance(threads, date_begin, date_end):
     for thread in threads:
         thread.set_finished(false)
         thread.set_dates(date_begin, date_end)
+
+
+def dump_data():
+    scream.say('preparing to write sna network...')
+    output_file = open('sna-' + str(date_begin) + '.gexf','w')
+    gexf.write(output_file)
+    scream.say('sna file for ' + str(date_begin) + ' created')
 
 
 if __name__ == "__main__":
