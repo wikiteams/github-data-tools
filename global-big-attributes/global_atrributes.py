@@ -242,13 +242,24 @@ class PushesGetter(threading.Thread):
                 scream.say(push)
                 scream.cout('date of activity: ' + str(push['created_at']))
                 datep = push['created_at']
-                repo_url = push['repo']['url']
-                repo_name = push['repo']['name']
+                if 'repo' in push:
+                    repo_url = push['repo']['url']
+                    repo_name = push['repo']['name']
+                else:
+                    repo_url = push['repository']['url']
+                    repo_name = push['repository']['name']
+                    # who is the repo owner?
+                    repo_owner = push['repository']['owner']
+                # who was pushing ?
                 if 'login' in push['actor']:
                     actor_login = push['actor']['login']
-                else:
+                elif 'actor' in push['payload']:
                     actor_login = push['payload']['actor']
+                else:
+                    actor_login = push['actor_attributes']['login']
+                # how many commits inside a push ?
                 payload_size = push['payload']['size']
+                # pushing to which repo (name) ?
                 if repo_name in repos:
                     # update his info
                     scream.say('repo ' + repo_name + ' found')
@@ -267,10 +278,10 @@ class PushesGetter(threading.Thread):
                 i += 1
                 scream.say('Pushes processed: ' + str(i))
         except StopIteration:
-            print 'Cursor depleted'
+            scream.err('Cursor `Pushes Event` depleted')
         except KeyError, k:
-            print str(k)
-            print push
+            scream.err(str(k))
+            scream.err(push)
             sys.exit(-1)
 
         self.finished = True
