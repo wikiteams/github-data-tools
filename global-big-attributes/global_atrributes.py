@@ -19,6 +19,8 @@ __author__ = 'doctor ko'
 users = dict()
 repos = dict()
 contributions = dict()
+#contributors_list = dict()
+contributions_count = dict()
 graph = None
 
 
@@ -28,30 +30,54 @@ def usage():
         print line
 
 
-def report_contribution(repo_name, actor_login, commits_count):
+def calculate_no_of_contributors_in_his_repos(owner_login):
+    global users
+    global contributions
+    how_many = 0
+    scream.say('for ' + owner_login + ' calculating how many contributors there are in his repos..')
+    for repo in contributions[owner_login]:
+        how_many += len(contributions[owner_login][repo][:])
+    users[owner_login].setHisReposHowManyDevelopers(how_many)
+
+
+def calculate_to_how_many_repos_he_contributed(actor_login, repo_name):
+    scream.say('to how many repos developer ' + actor_login + ' contributed')
+
+
+def report_contribution(repo_owner, repo_name, actor_login, commits_count):
+    global contributions
     existing_push_count = None
     existing_commit_count = None
-    if repo_name in contributions:
-        scream.say('reporting contribution to existing repository')
-        contributors = contributions[repo_name]
-        if actor_login in contributors:
-            scream.say('found that existing contributor added smth new')
-            existing_push_count = contributors[actor_login]['pushes']
-            contributors[actor_login]['pushes'] += 1
-            existing_commit_count = contributors[actor_login]['commits']
-            contributors[actor_login]['commits'] += commits_count
+    if repo_owner in contributions:
+        if repo_name in contributions:
+            scream.say('reporting contribution to existing repository')
+            contributors = contributions[repo_owner][repo_name]
+            if actor_login in contributors:
+                scream.say('found that existing contributor added smth new')
+                existing_push_count = contributors[actor_login]['pushes']
+                contributors[actor_login]['pushes'] += 1
+                existing_commit_count = contributors[actor_login]['commits']
+                contributors[actor_login]['commits'] += commits_count
+            else:
+                scream.say('new contributor detected')
+                existing_push_count = 0
+                existing_commit_count = 0
+                contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
         else:
-            scream.say('new contributor detected')
+            scream.say('reporting contribution to unknown repo')
+            contributors = dict()
             existing_push_count = 0
             existing_commit_count = 0
             contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
+            contributions[repo_owner][repo_name] = contributors
     else:
         scream.say('reporting contribution to unknown repo')
+        contributions[repo_owner] = dict()
         contributors = dict()
         existing_push_count = 0
         existing_commit_count = 0
         contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
-        contributions[repo_name] = contributors
+        contributions[repo_owner][repo_name] = contributors
     assert existing_push_count == contributions[repo_name][actor_login]['pushes'] - 1
     assert existing_commit_count == contributions[repo_name][actor_login]['commits'] - commits_count
 
@@ -275,6 +301,8 @@ class PushesGetter(threading.Thread):
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)
                     report_contribution(repo_name, actor_login, payload_size)
+                    calculate_no_of_contributors_in_his_repos(actor_login)
+                    calculate_to_how_many_repos_he_contributed(actor_login)
                 else:
                     # create repository in dictionary
                     gr = GitRepository(repo_url, repo_name)
@@ -283,6 +311,8 @@ class PushesGetter(threading.Thread):
                     scream.say('adding repo ' + repo_name + ' name')
                     repos[repo_name] = gr
                     report_contribution(repo_name, actor_login, payload_size)
+                    calculate_no_of_contributors_in_his_repos(actor_login)
+                    calculate_to_how_many_repos_he_contributed(actor_login)
                 i += 1
                 scream.say('Pushes processed: ' + str(i))
         except StopIteration:

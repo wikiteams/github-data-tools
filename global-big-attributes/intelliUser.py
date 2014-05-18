@@ -82,3 +82,9 @@ class GitUser():
 
     def setRepositoriesCount(self, repositories_count):
         self.repositories_count = repositories_count
+
+    def getHisReposHowManyDevelopers(self):
+        return self.his_repos_how_many_developers
+
+    def setHisReposHowManyDevelopers(self, his_repos_how_many_developers):
+        self.his_repos_how_many_developers = his_repos_how_many_developers
