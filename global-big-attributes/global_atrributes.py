@@ -245,11 +245,19 @@ class PushesGetter(threading.Thread):
                 if 'repo' in push:
                     repo_url = push['repo']['url']
                     repo_name = push['repo']['name']
+                    repo_owner = push['repo']['name'].split('/')[0]
                 else:
                     repo_url = push['repository']['url']
                     repo_name = push['repository']['name']
                     # who is the repo owner?
                     repo_owner = push['repository']['owner']
+                    repo_has_wiki = push['repository']['has_wiki']
+                    repo_has_issues = push['repository']['has_issues']
+                    repo_is_fork = push['repository']['fork']
+                    repo_stargazers = push['repository']['stargazers']
+                    repo_size = push['repository']['size']
+                    repo_forks = push['repository']['forks']
+                    repo_watchers = push['repository']['watchers']
                 # who was pushing ?
                 if 'login' in push['actor']:
                     actor_login = push['actor']['login']
@@ -261,14 +269,14 @@ class PushesGetter(threading.Thread):
                 payload_size = push['payload']['size']
                 # pushing to which repo (name) ?
                 if repo_name in repos:
-                    # update his info
+                    # update repository information
                     scream.say('repo ' + repo_name + ' found')
                     gr = repos[repo_name]
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)
                     report_contribution(repo_name, actor_login, payload_size)
                 else:
-                    # create user info
+                    # create repository in dictionary
                     gr = GitRepository(repo_url, repo_name)
                     gr.addPushCount(1)
                     gr.addCommitCount(payload_size)
@@ -478,7 +486,7 @@ def all_advance(threads, date_begin, date_end):
 
 def dump_data():
     scream.say('preparing to write sna network...')
-    output_file = open('sna-' + str(date_begin) + '.gexf','w')
+    output_file = open('sna-' + str(date_begin) + '.gexf', 'w')
     gexf.write(output_file)
     scream.say('sna file for ' + str(date_begin) + ' created')
 
