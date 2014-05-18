@@ -183,10 +183,10 @@ class FollowersGetter(threading.Thread):
                 graph.addEdge(source=actor_login, target=target_login, start=datep, label='follows')
                 print 'Follows processed in no of: ' + str(i)
         except StopIteration:
-            print 'Cursor for FollowEvents depleted'
+            scream.err('Cursor for FollowEvents depleted')
         except KeyError, k:
-            print str(k)
-            print follow
+            scream.err(str(k))
+            scream.err(follow)
             sys.exit(-1)
 
         self.finished = True

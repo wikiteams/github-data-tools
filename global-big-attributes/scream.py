@@ -22,7 +22,13 @@ def say(s):
         print str(s)
 
 
+# prints a message to console no matter what
 def cout(s):
+    print str(s)
+
+
+# prints an error message to standard err output
+def err(s):
     print str(s)
 
 
