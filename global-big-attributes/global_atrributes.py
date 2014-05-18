@@ -19,9 +19,9 @@ __author__ = 'doctor ko'
 users = dict()
 repos = dict()
 contributions = dict()
-#contributors_list = dict()
 contributions_count = dict()
-graph = None
+followers_graph = None
+contibutions_graph = None
 
 
 def usage():
@@ -129,7 +129,7 @@ class UnicodeWriter:
 # glownego zbiornika danych - dictionary o repozytoriach
 class FollowersGetter(threading.Thread):
     global db
-    global graph
+    global followers_graph
 
     finished = None
     date_from = None
@@ -178,7 +178,7 @@ class FollowersGetter(threading.Thread):
                     gu = users[actor_login]
                     gu.addFollowing(target_login)
                     gu.setFollowingDate(datep)
-                    assert graph.nodeExists(id=actor_login)
+                    assert followers_graph.nodeExists(id=actor_login)
                 else:
                     # create user info
                     gu = GitUser(actor_login)
@@ -186,7 +186,7 @@ class FollowersGetter(threading.Thread):
                     gu.addFollowing(target_login)
                     gu.setFollowingDate(datep)
                     users[actor_login] = gu
-                    graph.addNode(id=actor_login)
+                    followers_graph.addNode(id=actor_login)
                 if target_login in users:
                     # update his info
                     scream.cout('actor ' + target_login + ' found')
@@ -195,7 +195,7 @@ class FollowersGetter(threading.Thread):
                     gu.setFollowerDate(datep)
                     gu.setFollowersCount(target_followers)
                     gu.setRepositoriesCount(target_repos)
-                    assert graph.nodeExists(id=target_login)
+                    assert followers_graph.nodeExists(id=target_login)
                 else:
                     # create user info
                     gu = GitUser(target_login)
@@ -205,11 +205,11 @@ class FollowersGetter(threading.Thread):
                     gu.setFollowersCount(target_followers)
                     gu.setRepositoriesCount(target_repos)
                     users[target_login] = gu
-                    graph.addNode(id=target_login)
-                graph.addEdge(source=actor_login, target=target_login, start=datep, label='follows')
+                    followers_graph.addNode(id=target_login)
+                followers_graph.addEdge(source=actor_login, target=target_login, start=datep, label='follows')
                 print 'Follows processed in no of: ' + str(i)
         except StopIteration:
-            scream.err('Cursor for FollowEvents depleted')
+            scream.err('Cursor for `FollowEvents` depleted')
         except KeyError, k:
             scream.err(str(k))
             scream.err(follow)
@@ -514,16 +514,28 @@ def all_advance(threads, date_begin, date_end):
         thread.set_dates(date_begin, date_end)
 
 
-def dump_data():
+def dump_social_network():
     scream.say('preparing to write sna network...')
     output_file = open('sna-' + str(date_begin) + '.gexf', 'w')
     gexf.write(output_file)
     scream.say('sna file for ' + str(date_begin) + ' created')
 
 
+def dump_contributions_network():
+    scream.say('preparing to write contributions network...')
+    output_file = open('contributions-' + str(date_begin) + '.gexf', 'w')
+    gexf_second_file.write(output_file)
+    scream.say('cn file for ' + str(date_begin) + ' created')
+
+
+def dump_data():
+    dump_social_network()
+    dump_contributions_network()
+
+
 if __name__ == "__main__":
     global db
-    global graph
+    global followers_graph
     __builtin__.verbose = False
 
     try:
@@ -545,7 +557,9 @@ if __name__ == "__main__":
             use_utf8 = (a not in ['false', 'False'])
 
     gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
-    graph = gexf_file.addGraph("directed", "dynamic", "github")
+    followers_graph = gexf_file.addGraph("directed", "dynamic", "github")
+    gexf_second_file = gexf.Gexf("PJWSTK laboratories", "contributions_network" + '.gexf')
+    contibutions_graph = gexf_second_file.addGraph("undirected", "dynamic", "github")
     tt = 0
     db = MongoClient(host='localhost', port=27017)
     threads = []
