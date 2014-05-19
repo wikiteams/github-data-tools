@@ -378,6 +378,58 @@ class PullRequestsGetter(threading.Thread):
         self.finished = True
 
 
+# wyglada na to ze event TeamAddEvent zostal dodany calkiem niedawno
+# mongo dlugo szuka sortujac od poczatku timeline
+# reczne szukanie przed 2012.04 nie powiodlo sie
+# 4. Ilosc team memberow, ktorzy sa w projektach przez niego utworzonych [TeamAddEvent] [MemberEvent]
+# 5. Ilosc repo, ktorych nie tworzyl, w ktorych jest team member [TeamAddEvent] [MemberEvent]
+class TeamAddGetter(threading.Thread):
+    global db
+    finished = None
+    date_from = None
+    date_to = None
+
+    def __init__(self, threadId, date_from, date_to):
+        self.threadId = threadId
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.date_from = date_from
+        self.date_to = date_to
+
+    def run(self):
+        scream.say('TeamAddGetter starts work...')
+        self.finished = False
+        self.get_data()
+
+    def is_finished(self):
+        return self.finished
+
+    def set_finished(self, finished):
+        self.finished = finished
+
+    def get_data(self):
+        i = 0
+
+        teamadds = db.wikiteams.events.find({"created_at": {"$gte":
+                                           self.date_from,
+                                           "$lt": self.date_to},
+                                          "type": "TeamAddEvent"}
+                                          ).sort([("created_at", 1)])
+        try:
+            while(teamadds.alive):
+                teamadd = teamadds.next()
+                print 'Working on team add event no: ' + str(teamadd['_id'])
+                print 'date of activity: ' + str(teamadd['created_at'])
+                datep = teamadd['created_at']
+                actor_login = teamadd['actor']['login']
+                i += 1
+                print 'Team adds processed: ' + str(i)
+        except StopIteration:
+            print 'Cursor `TeamAddGetter` depleted'
+
+        self.finished = True
+
+
 class IssuesGetter(threading.Thread):
     global db
     finished = None
@@ -420,7 +472,7 @@ class IssuesGetter(threading.Thread):
                 i += 1
                 print 'Issues processed: ' + str(i)
         except StopIteration:
-            print 'Cursor depleted'
+            print 'Cursor `IssuesGetter` depleted'
 
         self.finished = True
 
@@ -580,8 +632,10 @@ if __name__ == "__main__":
     threads.append(prg.start())
     gg = GollumGetter(5, date_begin, date_end)
     threads.append(gg.start())
-    #threads.append(TeamAddGetter(6).start())
-    #threads.append(MemberGetter(7).start())
+    tadg = TeamAddGetter(6, date_begin, date_end)
+    threads.append(tadg.start())
+    mbg = MemberGetter(7, date_begin, date_end)
+    threads.append(mbg.start())
 
     while True:
         time.sleep(100)
