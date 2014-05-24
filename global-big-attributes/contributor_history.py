@@ -122,113 +122,6 @@ class UnicodeWriter:
             self.writerow(row)
 
 
-#1. Ilosc osob, ktore dany deweloper followuje; [FollowEvent]
-#2. Ilosc osob, ktore followuja dewelopera; [FollowEvent]
-# informacje o uzytkownikach bede przechwoywal w dictionary
-# o nazwie users, bedzie to informacja uzupelniajaca dla
-# glownego zbiornika danych - dictionary o repozytoriach
-class FollowersGetter(threading.Thread):
-    global db
-    global followers_graph
-
-    finished = None
-    date_from = None
-    date_to = None
-
-    def __init__(self, threadId, date_from, date_to):
-        self.threadId = threadId
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.date_from = date_from
-        self.date_to = date_to
-
-    def run(self):
-        scream.cout('FollowersGetter starts work...')
-        self.finished = False
-        self.get_data()
-
-    def is_finished(self):
-        return self.finished
-
-    def set_finished(self, finished):
-        self.finished = finished
-
-    def get_data(self):
-        i = 0
-
-        following = db.wikiteams.events.find({"created_at": {"$gte":
-                                              self.date_from,
-                                              "$lt": self.date_to},
-                                             "type": "FollowEvent"}
-                                             ).sort([("created_at", 1)])
-        try:
-            while(following.alive):
-                follow = following.next()
-                scream.cout('Working on `Follow Event` no: ' + str(follow['_id']))
-                scream.cout('Date of activity: ' + str(follow['created_at']))
-                datep = follow['created_at']
-                actor_login = follow['actor']['login']
-                i += 1
-                target_login = follow['target']['login']
-                target_followers = follow['target']['followers']
-                target_repos = follow['target']['repos']
-                if actor_login in users:
-                    # update his info
-                    scream.cout('actor ' + actor_login + ' found')
-                    gu = users[actor_login]
-                    gu.addFollowing(target_login)
-                    gu.setFollowingDate(datep)
-                    assert followers_graph.nodeExists(id=actor_login)
-                else:
-                    # create user info
-                    gu = GitUser(actor_login)
-                    scream.cout('adding actor ' + actor_login + ' login')
-                    gu.addFollowing(target_login)
-                    gu.setFollowingDate(datep)
-                    users[actor_login] = gu
-                    followers_graph.addNode(id=actor_login)
-                if target_login in users:
-                    # update his info
-                    scream.cout('actor ' + target_login + ' found')
-                    gu = users[target_login]
-                    gu.addFollower(actor_login)
-                    gu.setFollowerDate(datep)
-                    gu.setFollowersCount(target_followers)
-                    gu.setRepositoriesCount(target_repos)
-                    assert followers_graph.nodeExists(id=target_login)
-                else:
-                    # create user info
-                    gu = GitUser(target_login)
-                    scream.cout('adding actor ' + target_login + ' login')
-                    gu.addFollower(actor_login)
-                    gu.setFollowerDate(datep)
-                    gu.setFollowersCount(target_followers)
-                    gu.setRepositoriesCount(target_repos)
-                    users[target_login] = gu
-                    followers_graph.addNode(id=target_login)
-                followers_graph.addEdge(source=actor_login, target=target_login, start=datep, label='follows')
-                print 'Follows processed in no of: ' + str(i)
-        except StopIteration:
-            scream.err('Cursor for `FollowEvents` depleted')
-        except KeyError, k:
-            scream.err(str(k))
-            scream.err(follow)
-            sys.exit(-1)
-
-        self.finished = True
-
-
-# 3. Ilosc deweloperow, ktorzy sa w projektach
-# przez niego utworzonych [PushEvent]
-# 6. Ilosc repo, ktorych nie tworzyl, w ktorych jest contributorem [PushEvent]
-# 8. Czas spedzony w repo [PushEvent]
-# 9. Ilosc committow (rozbic na skille) [PushEvent]
-#   a. Ilosc commitow globalnie
-#   b. Ilosc commitow w repo
-#   c. Stosunek b/a
-# 13. Czas od ostatniego commitu [PushEvent]
-# 14. Czas od pierwszego commitu [PushEvent]
-# 15. Odstep czasu pomiedzy commitami [PushEvent]
 class PushesGetter(threading.Thread):
     global db
     finished = None
@@ -378,11 +271,6 @@ class PullRequestsGetter(threading.Thread):
         self.finished = True
 
 
-# wyglada na to ze event TeamAddEvent zostal dodany calkiem niedawno
-# mongo dlugo szuka sortujac od poczatku timeline
-# reczne szukanie przed 2012.04 nie powiodlo sie
-# 4. Ilosc team memberow, ktorzy sa w projektach przez niego utworzonych [TeamAddEvent] [MemberEvent]
-# 5. Ilosc repo, ktorych nie tworzyl, w ktorych jest team member [TeamAddEvent] [MemberEvent]
 class TeamAddGetter(threading.Thread):
     global db
     finished = None
@@ -411,10 +299,10 @@ class TeamAddGetter(threading.Thread):
         i = 0
 
         teamadds = db.wikiteams.events.find({"created_at": {"$gte":
-                                           self.date_from,
-                                           "$lt": self.date_to},
-                                          "type": "TeamAddEvent"}
-                                          ).sort([("created_at", 1)])
+                                            self.date_from,
+                                            "$lt": self.date_to},
+                                            "type": "TeamAddEvent"}
+                                            ).sort([("created_at", 1)])
         try:
             while(teamadds.alive):
                 teamadd = teamadds.next()
@@ -426,128 +314,6 @@ class TeamAddGetter(threading.Thread):
                 print 'Team adds processed: ' + str(i)
         except StopIteration:
             print 'Cursor `TeamAddGetter` depleted'
-
-        self.finished = True
-
-
-class IssuesGetter(threading.Thread):
-    global db
-    finished = None
-    date_from = None
-    date_to = None
-
-    def __init__(self, threadId, date_from, date_to):
-        self.threadId = threadId
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.date_from = date_from
-        self.date_to = date_to
-
-    def run(self):
-        scream.say('IssuesGetter starts work...')
-        self.finished = False
-        self.get_data()
-
-    def is_finished(self):
-        return self.finished
-
-    def set_finished(self, finished):
-        self.finished = finished
-
-    def get_data(self):
-        i = 0
-
-        issues = db.wikiteams.events.find({"created_at": {"$gte":
-                                           self.date_from,
-                                           "$lt": self.date_to},
-                                          "type": "IssuesEvent"}
-                                          ).sort([("created_at", 1)])
-        try:
-            while(issues.alive):
-                issue = issues.next()
-                print 'Working on issue event no: ' + str(issue['_id'])
-                print 'date of activity: ' + str(issue['created_at'])
-                datep = issue['created_at']
-                actor_login = issue['actor']['login']
-                i += 1
-                print 'Issues processed: ' + str(i)
-        except StopIteration:
-            print 'Cursor `IssuesGetter` depleted'
-
-        self.finished = True
-
-
-class GollumGetter(threading.Thread):
-    global db
-    finished = None
-    date_from = None
-    date_to = None
-
-    def __init__(self, threadId, date_from, date_to):
-        self.threadId = threadId
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.date_from = date_from
-        self.date_to = date_to
-
-    def run(self):
-        print 'GollumGetter starts work...'
-        self.finished = False
-        self.get_data()
-
-    def is_finished(self):
-        return self.finished
-
-    def set_finished(self, finished):
-        self.finished = finished
-
-    def get_data(self):
-        i = 0
-
-        gollums = db.wikiteams.events.find({"created_at": {"$gte":
-                                           self.date_from,
-                                           "$lt": self.date_to},
-                                           "type": "GollumEvent"}
-                                           ).sort([("created_at", 1)])
-        try:
-            while(gollums.alive):
-                gollum = gollums.next()
-                print 'Working on gollum event no: ' + str(gollum['_id'])
-                print 'date of activity: ' + str(gollum['created_at'])
-                datep = gollum['created_at']
-                if gollum['actor'] is str:
-                    actor_login = gollum['actor']
-                else:
-                    actor_login = gollum['actor']['login']
-                if 'repo' in gollum['payload']:
-                    repo_name = gollum['payload']['repo']
-                else:
-                    repo_is_fork = gollum['repository']['fork']
-                    repo_watchers = gollum['repository']['watchers']
-                    repo_description = gollum['repository']['description']
-                    repo_language = gollum['repository']['language']
-                    repo_has_downloads = gollum['repository']['has_downloads']
-                    repo_url = gollum['repository']['url']
-                    repo_stargazers = gollum['repository']['stargazers']
-                    repo_created_at = gollum['repository']['created_at']
-                    repo_master_branch = gollum['repository']['master_branch']
-                    repo_is_private = gollum['repository']['private']
-                    repo_pushed_at = gollum['repository']['pushed_at']
-                    repo_open_issues = gollum['repository']['open_issues']
-                    repo_has_wiki = gollum['repository']['has_wiki']
-                    repo_organization = gollum['repository']['organization']
-                    repo_owner = gollum['repository']['owner']
-                    repo_has_issues = gollum['repository']['has_issues']
-                    repo_forks = gollum['repository']['forks']
-                    repo_size = gollum['repository']['size']
-                    repo_homepage = gollum['repository']['homepage']
-                    repo_id = gollum['repository']['id']
-                    repo_name = gollum['repository']['name']
-
-                i += 1
-                print 'Gollums processed: ' + str(i)
-        except StopIteration:
-            print 'Cursor depleted'
 
         self.finished = True
 
@@ -669,16 +435,10 @@ if __name__ == "__main__":
     print 'starting from date: ' + str(date_begin)
     print 'ending on date: ' + str(date_end)
 
-    fg = FollowersGetter(1, date_begin, date_end)
-    threads.append(fg.start())
-    pg = PushesGetter(2, date_begin, date_end)
+    pg = PushesGetter(1, date_begin, date_end)
     threads.append(pg.start())
-    ig = IssuesGetter(3, date_begin, date_end)
-    threads.append(ig.start())
     prg = PullRequestsGetter(4, date_begin, date_end)
     threads.append(prg.start())
-    gg = GollumGetter(5, date_begin, date_end)
-    threads.append(gg.start())
     tadg = TeamAddGetter(6, date_begin, date_end)
     threads.append(tadg.start())
     mbg = MemberGetter(7, date_begin, date_end)
