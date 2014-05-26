@@ -1,7 +1,8 @@
 '''
 Represents a GitHub repository
+That's all ! Easy as it is
 
-@since 1.0
+@since 1.1
 @author Oskar Jarczyk
 '''
 
@@ -185,3 +186,9 @@ class GitRepository():
 
     def getLanguages(self):
         return self.repository_language
+
+    def getRepositoryCreatedAt(self):
+        return self.repository_created_at
+
+    def setRepositoryCreatedAt(self, repository_created_at):
+        self.repository_created_at = repository_created_at
