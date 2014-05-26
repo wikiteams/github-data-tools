@@ -1,3 +1,19 @@
+#####################################################################
+#
+# This is a script for basing getter of repo contributors and
+# collaborators. There are no sources of dynamic data for history
+# of contributors and collaborators in time, even GHTorrent won't
+# keep history of this, thats why we utilize our MongoDB collection
+# of events to restore information of collaborators of time
+#
+# A team member is someone who added at least one bit of information
+# to a repository, which is: code, integration, issue, wiki, etc.
+#
+#####################################################################
+
+# update: 26.05.2014
+# version 1.0 codename: Romer
+
 import codecs
 import cStringIO
 import csv
@@ -437,12 +453,12 @@ if __name__ == "__main__":
 
     pg = PushesGetter(1, date_begin, date_end)
     threads.append(pg.start())
-    prg = PullRequestsGetter(4, date_begin, date_end)
-    threads.append(prg.start())
-    tadg = TeamAddGetter(6, date_begin, date_end)
-    threads.append(tadg.start())
-    mbg = MemberGetter(7, date_begin, date_end)
-    threads.append(mbg.start())
+    #prg = PullRequestsGetter(4, date_begin, date_end)
+    #threads.append(prg.start())
+    #tadg = TeamAddGetter(6, date_begin, date_end)
+    #threads.append(tadg.start())
+    #mbg = MemberGetter(7, date_begin, date_end)
+    #threads.append(mbg.start())
 
     while True:
         time.sleep(100)
