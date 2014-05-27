@@ -33,12 +33,15 @@ import __builtin__
 __author__ = 'doctor ko'
 
 users = dict()
+
+# Here we hold uniqe repositories identified by keys
+# It is a most important collection in this script
 repos = dict()
 
 contributions = dict()
 contributions_count = dict()
-followers_graph = None
-contibutions_graph = None
+#followers_graph = None
+#contibutions_graph = None
 
 
 def usage():
@@ -283,12 +286,11 @@ class PushesGetter(threading.Thread):
                 else:
                     actor_login = push['actor_attributes']['login']
                 assert actor_login is not None
-                #payload_size = push['payload']['size']
-                # pushing to which repo (name) ?
-                if repo_name in repos:
+                repo_key = repo_owner + '/' + repo_name
+                if repo_key in repos:
                     # update repository information
-                    scream.say('repo ' + repo_name + ' found')
-                    gr = repos[repo_name]
+                    scream.say('repo ' + repo_key + ' found')
+                    gr = repos[repo_key]
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
                     report_contribution(repo_owner, repo_name, actor_login, datep)
@@ -297,8 +299,8 @@ class PushesGetter(threading.Thread):
                     gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    scream.say('adding repo ' + repo_name + ' name')
-                    repos[repo_name] = gr
+                    scream.say('adding repo ' + repo_key + ' name')
+                    repos[repo_key] = gr
                     report_contribution(repo_owner, repo_name, actor_login, datep)
                 i += 1
                 scream.say('Pushes processed: ' + str(i))
