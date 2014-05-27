@@ -46,21 +46,7 @@ def usage():
         print line
 
 
-def calculate_no_of_contributors_in_his_repos(owner_login):
-    global users
-    global contributions
-    how_many = 0
-    scream.say('for ' + owner_login + ' calculating how many contributors there are in his repos..')
-    for repo in contributions[owner_login]:
-        how_many += len(contributions[owner_login][repo][:])
-    users[owner_login].setHisReposHowManyDevelopers(how_many)
-
-
-def calculate_to_how_many_repos_he_contributed(actor_login, repo_name):
-    scream.say('to how many repos developer ' + actor_login + ' contributed')
-
-
-def report_contribution(repo_owner, repo_name, actor_login, commits_count):
+def report_contribution(repo_owner, repo_name, actor_login, datep):
     global contributions
     existing_push_count = None
     existing_commit_count = None
@@ -213,9 +199,7 @@ class CreateGetter(threading.Thread):
                     gr.setRepositoryCreatedAt(datep)
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    report_contribution(repo_name, actor_login)
-                    #calculate_no_of_contributors_in_his_repos(actor_login)
-                    #calculate_to_how_many_repos_he_contributed(actor_login)
+                    #report_contribution(repo_name, actor_login)
                 else:
                     # create repository in dictionary
                     gr = GitRepository(repo_url, repo_name)
@@ -224,9 +208,7 @@ class CreateGetter(threading.Thread):
                     #gr.addCommitCount(payload_size)
                     scream.say('adding repo ' + repo_name + ' name')
                     repos[repo_name] = gr
-                    report_contribution(repo_name, actor_login)
-                    #calculate_no_of_contributors_in_his_repos(actor_login)
-                    #calculate_to_how_many_repos_he_contributed(actor_login)
+                    #report_contribution(repo_name, actor_login)
                 i += 1
                 scream.say('Creates processed: ' + str(i))
         except StopIteration:
@@ -307,9 +289,7 @@ class PushesGetter(threading.Thread):
                     gr = repos[repo_name]
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    report_contribution(repo_name, actor_login, datep)
-                    #calculate_no_of_contributors_in_his_repos(actor_login)
-                    #calculate_to_how_many_repos_he_contributed(actor_login)
+                    report_contribution(repo_owner, repo_name, actor_login, datep)
                 else:
                     # create repository in dictionary
                     gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
@@ -317,9 +297,7 @@ class PushesGetter(threading.Thread):
                     #gr.addCommitCount(payload_size)
                     scream.say('adding repo ' + repo_name + ' name')
                     repos[repo_name] = gr
-                    report_contribution(repo_name, actor_login, datep)
-                    #calculate_no_of_contributors_in_his_repos(actor_login)
-                    #calculate_to_how_many_repos_he_contributed(actor_login)
+                    report_contribution(repo_owner, repo_name, actor_login, datep)
                 i += 1
                 scream.say('Pushes processed: ' + str(i))
         except StopIteration:
