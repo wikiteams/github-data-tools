@@ -166,10 +166,10 @@ class CreateGetter(threading.Thread):
         i = 0
 
         creating = db.wikiteams.events.find({"created_at": {"$gte":
-                                           self.date_from,
-                                           "$lt": self.date_to},
-                                           "type": "CreateEvent"}
-                                           ).sort([("created_at", 1)])
+                                             self.date_from,
+                                             "$lt": self.date_to},
+                                             "type": "CreateEvent"}
+                                            ).sort([("created_at", 1)])
         try:
             while(creating.alive):
                 created = creating.next()
@@ -228,12 +228,12 @@ class CreateGetter(threading.Thread):
                     #calculate_no_of_contributors_in_his_repos(actor_login)
                     #calculate_to_how_many_repos_he_contributed(actor_login)
                 i += 1
-                scream.say('Pushes processed: ' + str(i))
+                scream.say('Creates processed: ' + str(i))
         except StopIteration:
-            scream.err('Cursor `Pushes Event` depleted')
+            scream.err('Cursor `Create Event` depleted')
         except KeyError, k:
             scream.err(str(k))
-            scream.err(push)
+            scream.err(created)
             sys.exit(-1)
 
         self.finished = True
@@ -552,7 +552,9 @@ if __name__ == "__main__":
     print 'starting from date: ' + str(date_begin)
     print 'ending on date: ' + str(date_end)
 
-    pg = PushesGetter(1, date_begin, date_end)
+    cg = CreateGetter(1, date_begin, date_end)
+    threads.append(cg.start())
+    pg = PushesGetter(2, date_begin, date_end)
     threads.append(pg.start())
     #prg = PullRequestsGetter(4, date_begin, date_end)
     #threads.append(prg.start())
