@@ -12,7 +12,7 @@
 #####################################################################
 
 # update: 26.05.2014
-# version 1.0 codename: Romer
+# version 1.01 codename: Romer
 
 import codecs
 import cStringIO
@@ -217,6 +217,8 @@ class CreateGetter(threading.Thread):
 
 class PushesGetter(threading.Thread):
     global db
+    global repos
+    global contributions
     finished = None
     date_from = None
     date_to = None
@@ -305,6 +307,8 @@ class PushesGetter(threading.Thread):
 
 class PullRequestsGetter(threading.Thread):
     global db
+    global repos
+    global contributions
     finished = None
     date_from = None
     date_to = None
@@ -342,16 +346,45 @@ class PullRequestsGetter(threading.Thread):
                 scream.say(pullrequest)
                 scream.cout('date of activity: ' + str(pullrequest['created_at']))
                 datep = pullrequest['created_at']
+                if 'repo' in pullrequest:
+                    repo_url = pullrequest['repo']['url']
+                    # parsing url is imho much safer
+                    # prove otherwise than i'll fix it
+                    repo_name = repo_url.split('/')[-1]
+                    repo_owner = repo_url.split('/')[-2]
+                elif 'head' in pullrequest:
+                    repo_url = pullrequest['head']['repo']['url']
+                    repo_name = repo_url.split('/')[-1]
+                    repo_owner = repo_url.split('/')[-2]
                 if 'login' in pullrequest['actor']:
                     actor_login = pullrequest['actor']['login']
                 else:
                     actor_login = pullrequest['payload']['actor']
-                pullrequest_repo_name = pullrequest['payload']['repo']
-                pullrequest_commit_count = pullrequest['payload']['pull_request']['commits']
+                assert actor_login is not None
+                repo_key = repo_owner + '/' + repo_name
+                if repo_key in repos:
+                    # update repository information
+                    scream.say('repo ' + repo_key + ' found')
+                    gr = repos[repo_key]
+                    #gr.addPushCount(1)
+                    #gr.addCommitCount(payload_size)
+                    report_contribution(repo_key, actor_login, datep)
+                else:
+                    # create repository in dictionary
+                    gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
+                    #gr.addPushCount(1)
+                    #gr.addCommitCount(payload_size)
+                    scream.say('adding repo ' + repo_key + ' name')
+                    repos[repo_key] = gr
+                    report_contribution(repo_key, actor_login, datep)
                 i += 1
                 scream.say('Pull requests processed: ' + str(i))
         except StopIteration:
-            scream.cout('Cursor for Pull Requests depleted')
+            scream.err('Cursor `Pull Request Event` depleted')
+        except KeyError, k:
+            scream.err(str(k))
+            scream.err(pullrequest)
+            sys.exit(-1)
 
         self.finished = True
 
@@ -524,8 +557,8 @@ if __name__ == "__main__":
     threads.append(cg.start())
     pg = PushesGetter(2, date_begin, date_end)
     threads.append(pg.start())
-    #prg = PullRequestsGetter(4, date_begin, date_end)
-    #threads.append(prg.start())
+    prg = PullRequestsGetter(3, date_begin, date_end)
+    threads.append(prg.start())
     #tadg = TeamAddGetter(6, date_begin, date_end)
     #threads.append(tadg.start())
     #mbg = MemberGetter(7, date_begin, date_end)
