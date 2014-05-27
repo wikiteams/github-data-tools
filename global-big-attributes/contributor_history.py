@@ -50,42 +50,29 @@ def usage():
         print line
 
 
-def report_contribution(repo_owner, repo_name, actor_login, datep):
+def report_contribution(repo_key, actor_login, datep):
     global contributions
-    existing_push_count = None
-    existing_commit_count = None
-    if repo_owner in contributions:
-        if repo_name in contributions:
-            scream.say('reporting contribution to existing repository')
-            contributors = contributions[repo_owner][repo_name]
-            if actor_login in contributors:
-                scream.say('found that existing contributor added smth new')
-                existing_push_count = contributors[actor_login]['pushes']
-                contributors[actor_login]['pushes'] += 1
-                existing_commit_count = contributors[actor_login]['commits']
-                contributors[actor_login]['commits'] += commits_count
-            else:
-                scream.say('new contributor detected')
-                existing_push_count = 0
-                existing_commit_count = 0
-                contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
+    if repo_key in contributions:
+        scream.say('reporting contribution to existing repository')
+        contributors = contributions[repo_key]
+        if actor_login in contributors:
+            scream.say('found that existing contributor added smth new')
+            # do nothing
+            #existing_push_count = contributors[actor_login]['pushes']
+            #contributors[actor_login]['pushes'] += 1
+            #existing_commit_count = contributors[actor_login]['commits']
+            #contributors[actor_login]['commits'] += commits_count
         else:
-            scream.say('reporting contribution to unknown repo')
-            contributors = dict()
-            existing_push_count = 0
-            existing_commit_count = 0
-            contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
-            contributions[repo_owner][repo_name] = contributors
+            scream.say('new contributor detected')
+            #existing_push_count = 0
+            #existing_commit_count = 0
+            contributors[actor_login] = datep
     else:
         scream.say('reporting contribution to unknown repo')
-        contributions[repo_owner] = dict()
+        contributions[repo_key] = dict()
         contributors = dict()
-        existing_push_count = 0
-        existing_commit_count = 0
-        contributors[actor_login] = {'pushes': 1, 'commits': commits_count}
-        contributions[repo_owner][repo_name] = contributors
-    assert existing_push_count == contributions[repo_name][actor_login]['pushes'] - 1
-    assert existing_commit_count == contributions[repo_name][actor_login]['commits'] - commits_count
+        contributors[actor_login] = datep
+        contributions[repo_key] = contributors
 
 
 class MyDialect(csv.Dialect):
@@ -130,6 +117,8 @@ class UnicodeWriter:
 
 class CreateGetter(threading.Thread):
     global db
+    global repos
+    global contributions
     finished = None
     date_from = None
     date_to = None
@@ -293,7 +282,7 @@ class PushesGetter(threading.Thread):
                     gr = repos[repo_key]
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    report_contribution(repo_owner, repo_name, actor_login, datep)
+                    report_contribution(repo_key, actor_login, datep)
                 else:
                     # create repository in dictionary
                     gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
@@ -301,7 +290,7 @@ class PushesGetter(threading.Thread):
                     #gr.addCommitCount(payload_size)
                     scream.say('adding repo ' + repo_key + ' name')
                     repos[repo_key] = gr
-                    report_contribution(repo_owner, repo_name, actor_login, datep)
+                    report_contribution(repo_key, actor_login, datep)
                 i += 1
                 scream.say('Pushes processed: ' + str(i))
         except StopIteration:
