@@ -280,20 +280,17 @@ class PushesGetter(threading.Thread):
                 datep = push['created_at']
                 if 'repo' in push:
                     repo_url = push['repo']['url']
-                    repo_name = push['repo']['name']
-                    repo_owner = push['repo']['name'].split('/')[0]
+                    # parsing url is imho much safer
+                    # prove otherwise than i'll fix it
+                    repo_name = repo_url.split('/')[-1]
+                    repo_owner = repo_url.split('/')[-2]
                 else:
                     repo_url = push['repository']['url']
-                    repo_name = push['repository']['name']
+                    repo_name = repo_url.split('/')[-1]
+                    repo_owner = repo_url.split('/')[-2]
+                    #repo_name = push['repository']['name']
                     # who is the repo owner?
-                    repo_owner = push['repository']['owner']
-                    #repo_has_wiki = push['repository']['has_wiki']
-                    #repo_has_issues = push['repository']['has_issues']
-                    #repo_is_fork = push['repository']['fork']
-                    #repo_stargazers = push['repository']['stargazers']
-                    #repo_size = push['repository']['size']
-                    #repo_forks = push['repository']['forks']
-                    #repo_watchers = push['repository']['watchers']
+                    #repo_owner = push['repository']['owner']
                 # who was pushing ?
                 if 'login' in push['actor']:
                     actor_login = push['actor']['login']
@@ -301,7 +298,7 @@ class PushesGetter(threading.Thread):
                     actor_login = push['payload']['actor']
                 else:
                     actor_login = push['actor_attributes']['login']
-                # how many commits inside a push ?
+                assert actor_login is not None
                 #payload_size = push['payload']['size']
                 # pushing to which repo (name) ?
                 if repo_name in repos:
@@ -310,17 +307,17 @@ class PushesGetter(threading.Thread):
                     gr = repos[repo_name]
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    report_contribution(repo_name, actor_login)
+                    report_contribution(repo_name, actor_login, datep)
                     #calculate_no_of_contributors_in_his_repos(actor_login)
                     #calculate_to_how_many_repos_he_contributed(actor_login)
                 else:
                     # create repository in dictionary
-                    gr = GitRepository(repo_url, repo_name)
+                    gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
                     scream.say('adding repo ' + repo_name + ' name')
                     repos[repo_name] = gr
-                    report_contribution(repo_name, actor_login)
+                    report_contribution(repo_name, actor_login, datep)
                     #calculate_no_of_contributors_in_his_repos(actor_login)
                     #calculate_to_how_many_repos_he_contributed(actor_login)
                 i += 1

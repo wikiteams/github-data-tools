@@ -14,15 +14,18 @@ class GitRepository():
     push_count = 0
     commit_count = 0
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.data = []
-
-    def __init__(self, url, key):
-        self.data = []
-        self.repository_url = url
-        self.repository_key = key
-        self.repository_owner = key.split('/')[0]
-        self.repository_name = key.split('/')[1]
+        if len(args) > 0:
+            self.repository_url = args[0]
+            if 'key' in kwargs:
+                self.repository_key = kwargs['key']
+                self.repository_owner = kwargs['key'].split('/')[0]
+                self.repository_name = kwargs['key'].split('/')[1]
+            else:
+                self.repository_owner = kwargs['owner']
+                self.repository_name = kwargs['name']
+                self.repository_key = kwargs['owner'] + '/' + kwargs['name']
 
     repository_branches = None
     repository_commits = None
