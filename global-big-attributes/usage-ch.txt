@@ -1,0 +1,7 @@
+--verbose
+
+Prints more information to standard output
+
+--utf8
+
+self-explanatory

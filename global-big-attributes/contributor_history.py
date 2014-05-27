@@ -45,7 +45,7 @@ contributions_count = dict()
 
 
 def usage():
-    f = open('usage.txt', 'r')
+    f = open('usage-ch.txt', 'r')
     for line in f:
         print line
 
@@ -571,7 +571,7 @@ if __name__ == "__main__":
         if all_finished(threads):
             print 'month finished'
             # if yes, dump data to csv
-            dump_data()
+            # dump_data()
             date_begin = date_end
             date_end = date_begin + relativedelta(months=+1)
             # and start new month
