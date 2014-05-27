@@ -34,6 +34,7 @@ __author__ = 'doctor ko'
 
 users = dict()
 repos = dict()
+
 contributions = dict()
 contributions_count = dict()
 followers_graph = None
@@ -192,22 +193,23 @@ class CreateGetter(threading.Thread):
                     # let me show you the effects of 3rd party source constant change
                     raise Exception('nope nope nope Report ! Report Nopevill !!')
                 # doesnt matter who was creating - i already got owner
-                if repo_name in repos:
+                repo_key = repo_owner + '/' + repo_name
+                if repo_key in repos:
                     # update repository information
-                    scream.say('repo ' + repo_name + ' found')
-                    gr = repos[repo_name]
+                    scream.say('repo ' + repo_key + ' found')
+                    gr = repos[repo_key]
                     gr.setRepositoryCreatedAt(datep)
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
                     #report_contribution(repo_name, actor_login)
                 else:
                     # create repository in dictionary
-                    gr = GitRepository(repo_url, repo_name)
+                    gr = GitRepository(repo_url, name=repo_name, owner=repo_owner)
                     gr.setRepositoryCreatedAt(datep)
                     #gr.addPushCount(1)
                     #gr.addCommitCount(payload_size)
-                    scream.say('adding repo ' + repo_name + ' name')
-                    repos[repo_name] = gr
+                    scream.say('adding repo ' + repo_key + ' object to collection')
+                    repos[repo_key] = gr
                     #report_contribution(repo_name, actor_login)
                 i += 1
                 scream.say('Creates processed: ' + str(i))
@@ -438,10 +440,10 @@ class MemberGetter(threading.Thread):
         i = 0
 
         memberadds = db.wikiteams.events.find({"created_at": {"$gte":
-                                            self.date_from,
-                                            "$lt": self.date_to},
-                                            "type": "MemberEvent"}
-                                            ).sort([("created_at", 1)])
+                                              self.date_from,
+                                              "$lt": self.date_to},
+                                              "type": "MemberEvent"}
+                                              ).sort([("created_at", 1)])
         try:
             while(memberadds.alive):
                 memberadd = memberadds.next()
