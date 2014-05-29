@@ -22,8 +22,9 @@ import time
 import scream
 from pymongo import MongoClient
 import dateutil.parser
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from intelliUser import GitUser
+import pytz
 from intelliRepository import GitRepository
 import gexf
 import getopt
@@ -39,7 +40,7 @@ users = dict()
 repos = dict()
 
 contributions = dict()
-#contributions_count = dict()
+farthest_date_processed = None
 
 gexf_second_file = None
 
@@ -105,6 +106,16 @@ def dump_aggregated_csv():
                 dev_1_week += 1
             elif (date_added - date_created).days <= 14:
                 dev_2_week += 1
+            elif (date_added - date_created).months <= 1:
+                dev_1_month += 1
+            elif (date_added - date_created).months <= 3:
+                dev_3_month += 1
+            elif (date_added - date_created).months <= 6:
+                dev_6_month += 1
+            elif (date_added - date_created).months <= 8:
+                dev_8_month += 1
+            elif (date_added - date_created).months <= 12:
+                dev_12_month += 1
 
 
 class MyDialect(csv.Dialect):
@@ -148,9 +159,7 @@ class UnicodeWriter:
 
 
 class CreateGetter(threading.Thread):
-    global db
-    global repos
-    global contributions
+
     finished = None
     date_from = None
     date_to = None
@@ -174,6 +183,10 @@ class CreateGetter(threading.Thread):
         self.finished = finished
 
     def get_data(self):
+        global db
+        global repos
+        global contributions
+
         i = 0
 
         creating = db.wikiteams.events.find({"created_at": {"$gte":
@@ -249,9 +262,7 @@ class CreateGetter(threading.Thread):
 
 
 class PushesGetter(threading.Thread):
-    global db
-    global repos
-    global contributions
+
     finished = None
     date_from = None
     date_to = None
@@ -275,6 +286,10 @@ class PushesGetter(threading.Thread):
         self.finished = finished
 
     def get_data(self):
+        global db
+        global repos
+        global contributions
+        global farthest_date_processed
         i = 0
 
         pushing = db.wikiteams.events.find({"created_at": {"$gte":
@@ -289,6 +304,9 @@ class PushesGetter(threading.Thread):
                 scream.say(push)
                 scream.ssay('date of activity: ' + str(push['created_at']))
                 datep = push['created_at']
+                #datep = datetime.strptime(str(push['created_at']), '%Y-%m-%dT%H:%M:%SZ')
+                if datep > farthest_date_processed:
+                    farthest_date_processed = datep
                 if 'repo' in push:
                     repo_url = push['repo']['url']
                     # parsing url is imho much safer
@@ -339,9 +357,7 @@ class PushesGetter(threading.Thread):
 
 
 class PullRequestsGetter(threading.Thread):
-    global db
-    global repos
-    global contributions
+
     finished = None
     date_from = None
     date_to = None
@@ -365,6 +381,10 @@ class PullRequestsGetter(threading.Thread):
         self.finished = finished
 
     def get_data(self):
+        global db
+        global repos
+        global contributions
+
         i = 0
 
         pullrequests = db.wikiteams.events.find({"created_at": {"$gte":
@@ -423,7 +443,7 @@ class PullRequestsGetter(threading.Thread):
 
 
 class TeamAddGetter(threading.Thread):
-    global db
+
     finished = None
     date_from = None
     date_to = None
@@ -447,6 +467,8 @@ class TeamAddGetter(threading.Thread):
         self.finished = finished
 
     def get_data(self):
+        global db
+
         i = 0
 
         teamadds = db.wikiteams.events.find({"created_at": {"$gte":
@@ -470,7 +492,7 @@ class TeamAddGetter(threading.Thread):
 
 
 class MemberGetter(threading.Thread):
-    global db
+
     finished = None
     date_from = None
     date_to = None
@@ -494,6 +516,8 @@ class MemberGetter(threading.Thread):
         self.finished = finished
 
     def get_data(self):
+        global db
+
         i = 0
 
         memberadds = db.wikiteams.events.find({"created_at": {"$gte":
@@ -539,11 +563,6 @@ def dump_contributions_network():
 
 
 if __name__ == "__main__":
-    global db
-    global contibutions_graph
-    global gexf_second_file
-    global repos
-
     __builtin__.verbose = False
 
     try:
@@ -569,9 +588,12 @@ if __name__ == "__main__":
     tt = 0
     db = MongoClient(host='localhost', port=27017)
     threads = []
+    #utc = pytz.UTC
 
     d1 = '2011-02-12T00:00:00Z'
     date_begin = dateutil.parser.parse(d1)
+    #utc.localize(date_begin)
+    farthest_date_processed = date_begin
     date_end = date_begin + relativedelta(months=+1)
     scream.cout('starting from date: ' + str(date_begin))
     scream.cout('ending on date: ' + str(date_end))
