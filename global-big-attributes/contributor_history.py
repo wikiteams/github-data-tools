@@ -12,7 +12,7 @@
 #####################################################################
 
 # update: 26.05.2014
-# version 1.01 codename: Romer
+# version 1.02 codename: Blk
 
 import codecs
 import cStringIO
@@ -73,6 +73,38 @@ def report_contribution(repo_key, actor_login, datep):
         contributors = dict()
         contributors[actor_login] = datep
         contributions[repo_key] = contributors
+
+
+def dump_aggregated_csv():
+    for repo in repos.keys:
+        scream.say('Procesing repo, key: ' + repo)
+        scream.say('Initiating days contr count')
+        dev_1_day = 0
+        dev_2_day = 0
+        dev_3_day = 0
+        dev_1_week = 0
+        dev_2_week = 0
+        dev_1_month = 0
+        dev_3_month = 0
+        dev_6_month = 0
+        dev_8_month = 0
+        dev_12_month = 0
+        date_created = repos[repo].getRepositoryCreatedAt()
+        for contributor in contributions[repo].keys:
+            scream.say('processing contributor name: ' + str(contributor))
+            date_added = contributor[repo][contributor]
+            scream.say('date when become member: ' + str(date_added))
+            assert date_created <= date_added
+            if (date_added - date_created).days <= 1:
+                dev_1_day += 1
+            elif (date_added - date_created).days <= 2:
+                dev_2_day += 1
+            elif (date_added - date_created).days <= 3:
+                dev_3_day += 1
+            elif (date_added - date_created).days <= 7:
+                dev_1_week += 1
+            elif (date_added - date_created).days <= 14:
+                dev_2_week += 1
 
 
 class MyDialect(csv.Dialect):
@@ -497,23 +529,11 @@ def all_advance(threads, date_begin, date_end):
         thread.set_dates(date_begin, date_end)
 
 
-def dump_social_network():
-    scream.say('preparing to write sna network...')
-    output_file = open('sna-' + str(date_begin) + '.gexf', 'w')
-    gexf.write(output_file)
-    scream.say('sna file for ' + str(date_begin) + ' created')
-
-
 def dump_contributions_network():
     scream.say('preparing to write contributions network...')
     output_file = open('contributions-' + str(date_begin) + '.gexf', 'w')
     gexf_second_file.write(output_file)
     scream.say('cn file for ' + str(date_begin) + ' created')
-
-
-def dump_data():
-    dump_social_network()
-    dump_contributions_network()
 
 
 if __name__ == "__main__":
@@ -539,8 +559,8 @@ if __name__ == "__main__":
         elif o in ("-u", "--utf8"):
             use_utf8 = (a not in ['false', 'False'])
 
-    gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
-    followers_graph = gexf_file.addGraph("directed", "dynamic", "github")
+    #gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
+    #followers_graph = gexf_file.addGraph("directed", "dynamic", "github")
     gexf_second_file = gexf.Gexf("PJWSTK laboratories", "contributions_network" + '.gexf')
     contibutions_graph = gexf_second_file.addGraph("undirected", "dynamic", "github")
     tt = 0
@@ -571,7 +591,7 @@ if __name__ == "__main__":
         if all_finished(threads):
             print 'month finished'
             # if yes, dump data to csv
-            # dump_data()
+            dump_contributions_network()
             date_begin = date_end
             date_end = date_begin + relativedelta(months=+1)
             # and start new month
@@ -580,3 +600,5 @@ if __name__ == "__main__":
             all_advance(date_begin, date_end)
         else:
             print date_begin + ' still processing already for ' + tt + ' ms'
+
+    dump_aggregated_csv()
