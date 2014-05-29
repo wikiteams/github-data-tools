@@ -22,7 +22,6 @@ import time
 import scream
 from pymongo import MongoClient
 import dateutil.parser
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pytz
 from intelliRepository import GitRepository
@@ -49,6 +48,10 @@ def usage():
     f = open('usage-ch.txt', 'r')
     for line in f:
         print line
+
+
+def useZulu():
+    return not __builtin__.tango
 
 
 def report_contribution(repo_key, actor_login, datep):
@@ -201,6 +204,8 @@ class CreateGetter(threading.Thread):
                 scream.say(created)
                 scream.ssay('date of activity: ' + str(created['created_at']))
                 datep = created['created_at']
+                utc = pytz.UTC if useZulu() else pytz.timezone('Etc/GMT-7')
+                datep = utc.localize(datep)
                 scream.log(type(datep).__name__)
                 # basicly a date of repo creation !
                 if 'payload' in created:
@@ -304,6 +309,8 @@ class PushesGetter(threading.Thread):
                 scream.say(push)
                 scream.ssay('date of activity: ' + str(push['created_at']))
                 datep = push['created_at']
+                utc = pytz.UTC if useZulu() else pytz.timezone('Etc/GMT-7')
+                datep = utc.localize(datep)
                 #datep = datetime.strptime(str(push['created_at']), '%Y-%m-%dT%H:%M:%SZ')
                 if datep > farthest_date_processed:
                     farthest_date_processed = datep
@@ -399,6 +406,8 @@ class PullRequestsGetter(threading.Thread):
                 scream.say(pullrequest)
                 scream.ssay('date of activity: ' + str(pullrequest['created_at']))
                 datep = pullrequest['created_at']
+                utc = pytz.UTC if useZulu() else pytz.timezone('Etc/GMT-7')
+                datep = utc.localize(datep)
                 if 'repo' in pullrequest:
                     repo_url = pullrequest['repo']['url']
                     # parsing url is imho much safer
@@ -564,6 +573,7 @@ def dump_contributions_network():
 
 if __name__ == "__main__":
     __builtin__.verbose = False
+    __builtin__.tango = False
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hu:v", ["help", "utf8=", "verbose"])
@@ -577,6 +587,9 @@ if __name__ == "__main__":
         if o in ("-v", "--verbose"):
             __builtin__.verbose = True
             scream.ssay('Enabling verbose mode.')
+        elif o in ("-t", "--tango"):
+            __builtin__.tango = True
+            scream.ssay('Enabling switch to Tango (GMT-7) time.')
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
@@ -588,11 +601,9 @@ if __name__ == "__main__":
     tt = 0
     db = MongoClient(host='localhost', port=27017)
     threads = []
-    #utc = pytz.UTC
 
     d1 = '2011-02-12T00:00:00Z'
     date_begin = dateutil.parser.parse(d1)
-    #utc.localize(date_begin)
     farthest_date_processed = date_begin
     date_end = date_begin + relativedelta(months=+1)
     scream.cout('starting from date: ' + str(date_begin))
@@ -638,6 +649,7 @@ if __name__ == "__main__":
         elif tt % 1000 == 0:
             scream.cout('Still working on ' + str(date_begin) + 'already for ' + str(tt) + ' ms')
             scream.cout('Repos in database: ' + str(len(repos)))
+            scream.cout('Farthest push date processed: ' + str(farthest_date_processed))
         else:
             scream.std_fwrite('+')
             scream.say(str(date_begin) + ' still processing already for ' + str(tt) + ' ms')
