@@ -39,9 +39,9 @@ users = dict()
 repos = dict()
 
 contributions = dict()
-contributions_count = dict()
-#followers_graph = None
-#contibutions_graph = None
+#contributions_count = dict()
+
+gexf_second_file = None
 
 
 def usage():
@@ -184,10 +184,11 @@ class CreateGetter(threading.Thread):
         try:
             while(creating.alive):
                 created = creating.next()
-                scream.cout('Working on create event no: ' + str(created['_id']))
+                scream.ssay('Working on create event no: ' + str(created['_id']))
                 scream.say(created)
-                scream.cout('date of activity: ' + str(created['created_at']))
+                scream.ssay('date of activity: ' + str(created['created_at']))
                 datep = created['created_at']
+                scream.log(type(datep).__name__)
                 # basicly a date of repo creation !
                 if 'payload' in created:
                     if 'object' in created['payload']:
@@ -236,7 +237,7 @@ class CreateGetter(threading.Thread):
                     repos[repo_key] = gr
                     #report_contribution(repo_name, actor_login)
                 i += 1
-                scream.say('Creates processed: ' + str(i))
+                scream.ssay('Creates processed: ' + str(i))
         except StopIteration:
             scream.err('Cursor `Create Event` depleted')
         except KeyError, k:
@@ -284,9 +285,9 @@ class PushesGetter(threading.Thread):
         try:
             while(pushing.alive):
                 push = pushing.next()
-                scream.cout('Working on push event no: ' + str(push['_id']))
+                scream.ssay('Working on push event no: ' + str(push['_id']))
                 scream.say(push)
-                scream.cout('date of activity: ' + str(push['created_at']))
+                scream.ssay('date of activity: ' + str(push['created_at']))
                 datep = push['created_at']
                 if 'repo' in push:
                     repo_url = push['repo']['url']
@@ -374,9 +375,9 @@ class PullRequestsGetter(threading.Thread):
         try:
             while(pullrequests.alive):
                 pullrequest = pullrequests.next()
-                scream.cout('Working on `Pull Request Event` no: ' + str(pullrequest['_id']))
+                scream.ssay('Working on `Pull Request Event` no: ' + str(pullrequest['_id']))
                 scream.say(pullrequest)
-                scream.cout('date of activity: ' + str(pullrequest['created_at']))
+                scream.ssay('date of activity: ' + str(pullrequest['created_at']))
                 datep = pullrequest['created_at']
                 if 'repo' in pullrequest:
                     repo_url = pullrequest['repo']['url']
@@ -525,20 +526,24 @@ def all_finished(threads):
 
 def all_advance(threads, date_begin, date_end):
     for thread in threads:
-        thread.set_finished(false)
+        thread.set_finished(False)
         thread.set_dates(date_begin, date_end)
 
 
 def dump_contributions_network():
-    scream.say('preparing to write contributions network...')
+    global gexf_second_file
+    scream.cout('preparing to write contributions network...')
     output_file = open('contributions-' + str(date_begin) + '.gexf', 'w')
     gexf_second_file.write(output_file)
-    scream.say('cn file for ' + str(date_begin) + ' created')
+    scream.cout('cn file for ' + str(date_begin) + ' created')
 
 
 if __name__ == "__main__":
     global db
     global contibutions_graph
+    global gexf_second_file
+    global repos
+
     __builtin__.verbose = False
 
     try:
@@ -572,21 +577,31 @@ if __name__ == "__main__":
     scream.cout('ending on date: ' + str(date_end))
 
     cg = CreateGetter(1, date_begin, date_end)
-    threads.append(cg.start())
+    threads.append(cg)
+    threads[-1].start()
     pg = PushesGetter(2, date_begin, date_end)
-    threads.append(pg.start())
+    threads.append(pg)
+    threads[-1].start()
     prg = PullRequestsGetter(3, date_begin, date_end)
-    threads.append(prg.start())
+    threads.append(prg)
+    threads[-1].start()
     #tadg = TeamAddGetter(6, date_begin, date_end)
     #threads.append(tadg.start())
     #mbg = MemberGetter(7, date_begin, date_end)
     #threads.append(mbg.start())
 
+    scream.cout('All threads started..')
+    scream.cout('Start routine checks....')
+
     while True:
-        time.sleep(100)
+        #scream.std_fwrite('T')
+        time.sleep(0.1)  # these are seconds :)
+        #scream.std_fwrite('*')
         tt += 100
+        #scream.std_fwrite('*')
         # check if all thread finish 1-month job
         if all_finished(threads):
+            scream.std_fwrite('!')
             scream.cout('Month ' + str(date_begin.month) + 'finished')
             # if yes, dump data to csv
             scream.cout('Preparing to dump contributions network...')
@@ -598,7 +613,11 @@ if __name__ == "__main__":
             scream.cout('advancing the `from date`: ' + str(date_begin))
             scream.cout('advancing the `ending on date`: ' + str(date_end))
             all_advance(date_begin, date_end)
+        elif tt % 1000 == 0:
+            scream.cout('Still working on ' + str(date_begin) + 'already for ' + str(tt) + ' ms')
+            scream.cout('Repos in database: ' + str(len(repos)))
         else:
+            scream.std_fwrite('+')
             scream.say(str(date_begin) + ' still processing already for ' + str(tt) + ' ms')
 
     dump_aggregated_csv()

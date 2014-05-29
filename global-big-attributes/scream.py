@@ -60,6 +60,11 @@ def log_debug(s):
         logger.debug(s)
 
 
+def std_fwrite(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+
 def std_write(s):
     if (intelliTag_verbose) and (not DISABLE__STD):
         sys.stdout.write(s)

@@ -1,7 +1,9 @@
+Repo contr hist creator... + gexf maker
+
 --verbose
 
 Prints more information to standard output
 
 --utf8
 
-self-explanatory
+ensure output files are in UTF-8 format..
