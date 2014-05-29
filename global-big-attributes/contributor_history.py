@@ -538,7 +538,7 @@ def dump_contributions_network():
 
 if __name__ == "__main__":
     global db
-    global followers_graph
+    global contibutions_graph
     __builtin__.verbose = False
 
     try:
@@ -559,8 +559,6 @@ if __name__ == "__main__":
         elif o in ("-u", "--utf8"):
             use_utf8 = (a not in ['false', 'False'])
 
-    #gexf_file = gexf.Gexf("PJWSTK laboratories", "SNA-by-wikiteams" + '.gexf')
-    #followers_graph = gexf_file.addGraph("directed", "dynamic", "github")
     gexf_second_file = gexf.Gexf("PJWSTK laboratories", "contributions_network" + '.gexf')
     contibutions_graph = gexf_second_file.addGraph("undirected", "dynamic", "github")
     tt = 0
@@ -570,8 +568,8 @@ if __name__ == "__main__":
     d1 = '2011-02-12T00:00:00Z'
     date_begin = dateutil.parser.parse(d1)
     date_end = date_begin + relativedelta(months=+1)
-    print 'starting from date: ' + str(date_begin)
-    print 'ending on date: ' + str(date_end)
+    scream.cout('starting from date: ' + str(date_begin))
+    scream.cout('ending on date: ' + str(date_end))
 
     cg = CreateGetter(1, date_begin, date_end)
     threads.append(cg.start())
@@ -589,16 +587,18 @@ if __name__ == "__main__":
         tt += 100
         # check if all thread finish 1-month job
         if all_finished(threads):
-            print 'month finished'
+            scream.cout('Month ' + str(date_begin.month) + 'finished')
             # if yes, dump data to csv
+            scream.cout('Preparing to dump contributions network...')
             dump_contributions_network()
+            scream.cout('Incrementing month...')
             date_begin = date_end
             date_end = date_begin + relativedelta(months=+1)
             # and start new month
-            print 'advancing the `from date`: ' + date_begin
-            print 'advancing the `ending on date`: ' + date_end
+            scream.cout('advancing the `from date`: ' + str(date_begin))
+            scream.cout('advancing the `ending on date`: ' + str(date_end))
             all_advance(date_begin, date_end)
         else:
-            print date_begin + ' still processing already for ' + tt + ' ms'
+            scream.say(str(date_begin) + ' still processing already for ' + str(tt) + ' ms')
 
     dump_aggregated_csv()

@@ -1,3 +1,10 @@
+#####################################
+# handy utility for managing output #
+#    call me at once, if you can    #
+#       if can't, also call me      #
+#               S.H.                #
+#####################################
+
 import sys
 import logging
 import logging.handlers
