@@ -1,5 +1,7 @@
 import pandas as pd
 import dateutil.parser
+from termcolor import colored
+import json
 
 WAIT_FOR_USER = True
 
@@ -10,45 +12,89 @@ pulls_csv_filename = 'pulls.csv'
 follows_csv_filename = 'follows.csv'
 issues_csv_filename = 'issues.csv'
 team_adds_csv_filename = 'team-adds.csv'
+member_adds_csv_filename = 'member-adds.csv'
+
+pd.set_option('display.max_columns', 50)
+pd.set_option('display.width', 600)
 
 ultimate_path = '../'
 
 team_adds_df = pd.read_csv(ultimate_path + team_adds_csv_filename, header=0,
                            sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
-print 'Reading team_adds_csv_filename done.'
-print 'Index of team_adds_df is:'
+print colored('Reading team_adds_csv_filename done.', 'green')
+print colored('Index of team_adds_df is:', 'green')
 print team_adds_df.index
 print team_adds_df.dtypes
 print team_adds_df.head()
 print team_adds_df.tail()
-print 'Parsing IsoDate Zulu time to proper datetime object'
+print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
 team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
 print team_adds_df.dtypes  # can verify
 print team_adds_df.head()
 print team_adds_df.tail()
-print 'Starting normalizing username'
+print colored('Starting normalizing username', 'green')
 team_adds_df['username'] = pd.concat([team_adds_df['actor'], team_adds_df['actor.login'], team_adds_df['actor_attributes.login']], ignore_index=True)
-print 'End normalizing username'
+print colored('End normalizing username', 'green')
 assert '' not in team_adds_df['username']
 print pd.isnull(team_adds_df['username']).any()
-print 'End verifiying usernames'
-print 'Starting normalizing repository'
+print colored('End verifiying usernames', 'green')
+print colored('Starting normalizing repository', 'green')
 team_adds_df['repository'] = pd.concat([team_adds_df['repository.url'], team_adds_df['repo.url'], team_adds_df['payload.repository.url']], ignore_index=True)
-print 'End normalizing repository'
+print colored('End normalizing repository', 'green')
 assert '' not in team_adds_df['repository']
 print pd.isnull(team_adds_df['repository']).any()
-print 'End verifiying repository'
-print 'Droping useless before-concat columns'
+print colored('End verifiying repository', 'green')
+print colored('Droping useless before-concat columns', 'red')
 team_adds_df = team_adds_df.drop('actor', axis=1)
 team_adds_df = team_adds_df.drop('actor.login', axis=1)
 team_adds_df = team_adds_df.drop('actor_attributes.login', axis=1)
 team_adds_df = team_adds_df.drop('repository.url', axis=1)
 team_adds_df = team_adds_df.drop('repo.url', axis=1)
 team_adds_df = team_adds_df.drop('payload.repository.url', axis=1)
-print 'Drop complete'
+print colored('Drop of columns complete', 'red')
 print team_adds_df.dtypes  # can verify
 print team_adds_df.head()
 print team_adds_df.tail()
+
+if WAIT_FOR_USER:
+    raw_input("Press Enter to continue to member add events...")
+
+member_adds_df = pd.read_csv(ultimate_path + member_adds_csv_filename, header=0,
+                             sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+print colored('Reading member_adds_csv_filename done.', 'green')
+print colored('Index of member_adds_df is:', 'green')
+print member_adds_df.index
+print member_adds_df.dtypes
+print member_adds_df.head()
+print member_adds_df.tail()
+print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
+member_adds_df['created_at'] = member_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+print member_adds_df.dtypes  # can verify
+print member_adds_df.head()
+print member_adds_df.tail()
+print colored('Starting normalizing username', 'green')
+member_adds_df['payload.member'] = member_adds_df['payload.member'].apply(lambda x: json.loads(x) if ',' in x else x)
+member_adds_df['username'] = member_adds_df.apply(lambda x: x['payload.member.login'] if x['payload.member.login'] != '' else x['payload.member'], 1)
+print colored('End normalizing username', 'green')
+assert '' not in member_adds_df['username']
+print pd.isnull(member_adds_df['username']).any()
+print colored('End verifiying usernames', 'green')
+print colored('Starting normalizing repository', 'green')
+member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'], member_adds_df['repo.url']], ignore_index=True)
+print colored('End normalizing repository', 'green')
+assert '' not in member_adds_df['repository']
+print pd.isnull(member_adds_df['repository']).any()
+print colored('End verifiying repository', 'green')
+print colored('Droping useless before-concat columns', 'red')
+member_adds_df = member_adds_df.drop('actor', axis=1)
+member_adds_df = member_adds_df.drop('payload.member.login', axis=1)
+member_adds_df = member_adds_df.drop('payload.member', axis=1)
+member_adds_df = member_adds_df.drop('repository.url', axis=1)
+member_adds_df = member_adds_df.drop('repo.url', axis=1)
+print colored('Drop complete', 'red')
+print member_adds_df.dtypes  # can verify
+print member_adds_df.head()
+print member_adds_df.tail()
 
 if WAIT_FOR_USER:
     raw_input("Press Enter to continue to creation events...")
