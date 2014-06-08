@@ -212,20 +212,52 @@ if __name__ == "__main__":
     if resume == 'Pulls' or resume is None:
         resume = None
         print colored('Reading the ' + pulls_csv_filename + ' file.. it may take a while...', 'red')
-        pulls_df = pandas.read_csv(ultimate_path + pulls_csv_filename, header=0,
-                                   sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[1], quotechar='"')
-        print 'Reading pulls_csv_filename done..'
+        pulls_df = pd.read_csv(ultimate_path + pulls_csv_filename, header=0,
+                                 sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+        print colored('Reading pulls_csv_filename done.', 'green')
+        print colored('Index of pulls_df is:', 'green')
+        print pulls_df.index[0:5]
         print pulls_df.dtypes
-        print pulls_df.head()
-        print pulls_df.tail()
-        print 'Parsing IsoDate Zulu time to proper datetime object'
-        team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print pulls_df.head(20)
+        print pulls_df.tail(20)
+        print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
+        pulls_df['created_at'] = pulls_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print colored('Fixing 4 columns types..', 'green')
+        pulls_df['actor.login'] = pulls_df['actor.login'].astype(str)
+        pulls_df['payload.actor'] = pulls_df['payload.actor'].astype(str)
+        pulls_df['head.repo'] = pulls_df['head.repo'].astype(str)
+        pulls_df['repo.url'] = pulls_df['repo.url'].astype(str)
         print pulls_df.dtypes  # can verify
-        print pulls_df.head()
-        print pulls_df.tail()
+        print pulls_df.head(20)
+        print pulls_df.tail(20)
+        print colored('Starting normalizing actor username', 'green')
+        #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
+        pulls_df['username'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['payload.object'], x['payload.ref_type']]))), 1)
+        print colored('End normalizing payload username', 'green')
+        assert '' not in pulls_df['username']
+        print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(pulls_df['username']).any())
+        print colored('End verifiying payload username', 'green')
+        print colored('Starting normalizing repository', 'green')
+        #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
+        pulls_df['repository'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['head.repo'], x['repo.url']]))), 1)
+        print colored('End normalizing repository', 'green')
+        assert '' not in pulls_df['repository']
+        print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(pulls_df['repository']).any())
+        print colored('End verifiying repository', 'green')
+        print colored('Droping useless before-concat columns', 'red')
+        pulls_df = pulls_df.drop('actor.login', axis=1)
+        pulls_df = pulls_df.drop('payload.actor', axis=1)
+        pulls_df = pulls_df.drop('head.repo', axis=1)
+        pulls_df = pulls_df.drop('repo.url', axis=1)
+        print colored('Drop of 4 columns complete', 'red')
+        print pulls_df.dtypes  # can verify
+        print pulls_df.head(20)
+        print pulls_df.tail(20)
+        print colored('Writing normalized CSV..', 'blue')
+        pulls_df.to_csv(ultimate_path + 'normalized_' + pushes_csv_filename, mode='wb', sep=';', encoding='UTF-8')
 
         if WAIT_FOR_USER:
-            raw_input("Press Enter to continue to follows events...")
+            raw_input("Press Enter to continue to pulls events...")
 
     follows_df = pandas.read_csv(ultimate_path + follows_csv_filename, header=0,
                                  sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[1], quotechar='"')
