@@ -87,7 +87,7 @@ assert '' not in member_adds_df['username']
 print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['username']).any())
 print colored('End verifiying usernames', 'green')
 print colored('Starting normalizing repository', 'green')
-member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url']].fillna(''), ignore_index=True)
+member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url'].fillna('')], ignore_index=True)
 print colored('End normalizing repository', 'green')
 assert '' not in member_adds_df['repository']
 print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['repository']).any())
@@ -109,16 +109,41 @@ if WAIT_FOR_USER:
     raw_input("Press Enter to continue to repo creation events...")
 
 created_df = pandas.read_csv(ultimate_path + created_at_filename, header=0,
-                             sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[5], quotechar='"')
-print 'Reading created_data_frame done.'
+                             sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+print colored('Reading created_at_filename done.', 'green')
+print colored('Index of created_df is:', 'green')
+print created_df.index[0:5]
 print created_df.dtypes
-print created_df.head()
-print created_df.tail()
-print 'Parsing IsoDate Zulu time to proper datetime object'
-team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+print created_df.head(20)
+print created_df.tail(20)
+print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
+created_df['created_at'] = created_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
 print created_df.dtypes  # can verify
-print created_df.head()
-print created_df.tail()
+print created_df.head(20)
+print created_df.tail(20)
+print colored('Starting normalizing payload object', 'green')
+created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
+print colored('End normalizing payload object', 'green')
+assert '' not in created_df['object']
+print 'Are there any nulls in object column?: ' + str(pd.isnull(created_df['object']).any())
+print colored('End verifiying payload object', 'green')
+print colored('Starting normalizing repository', 'green')
+created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
+print colored('End normalizing repository', 'green')
+assert '' not in created_df['repository']
+print 'Are there any nulls in repository column?: ' + str(pd.isnull(created_df['repository']).any())
+print colored('End verifiying repository', 'green')
+print colored('Droping useless before-concat columns', 'red')
+created_df = created_df.drop('payload.object', axis=1)
+created_df = created_df.drop('payload.ref_type', axis=1)
+created_df = created_df.drop('repository.url', axis=1)
+created_df = created_df.drop('repo.url', axis=1)
+print colored('Drop of 4 columns complete', 'red')
+print created_df.dtypes  # can verify
+print created_df.head(20)
+print created_df.tail(20)
+print colored('Writing normalized CSV..', 'blue')
+created_df.to_csv(ultimate_path + 'normalized_' + created_at_filename, mode='wb', sep=';', encoding='UTF-8')
 
 if WAIT_FOR_USER:
     raw_input("Press Enter to continue to pulls events...")
