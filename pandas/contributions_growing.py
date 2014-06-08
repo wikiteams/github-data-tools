@@ -7,6 +7,7 @@ import sys
 import __builtin__
 
 WAIT_FOR_USER = True
+empty_string = ''
 
 created_at_filename = 'created.csv'
 
@@ -55,6 +56,7 @@ if __name__ == "__main__":
 
     if resume == 'TeamAdds' or resume is None:
         resume = None
+        print colored('Reading the ' + team_adds_csv_filename + ' file.. it may take a while...', 'red')
         team_adds_df = pd.read_csv(ultimate_path + team_adds_csv_filename, header=0,
                                    sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading team_adds_csv_filename done.', 'green')
@@ -65,17 +67,24 @@ if __name__ == "__main__":
         print team_adds_df.tail(20)
         print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
         team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print colored('Fixing 4 columns types..', 'green')
+        team_adds_df['actor.login'] = team_adds_df['actor.login'].astype(str)
+        team_adds_df['repo.url'] = team_adds_df['repo.url'].astype(str)
+        team_adds_df['repository.url'] = team_adds_df['repository.url'].astype(str)
+        team_adds_df['payload.repository.url'] = team_adds_df['payload.repository.url'].astype(str)
         print team_adds_df.dtypes  # can verify
         print team_adds_df.head(20)
         print team_adds_df.tail(20)
         print colored('Starting normalizing username', 'green')
-        team_adds_df['username'] = pd.concat([team_adds_df['actor'], team_adds_df['actor.login'], team_adds_df['actor_attributes.login']], ignore_index=True)
+        #team_adds_df['username'] = pd.concat([team_adds_df['actor'], team_adds_df['actor.login'], team_adds_df['actor_attributes.login']], ignore_index=True)
+        team_adds_df['username'] = team_adds_df.apply(lambda x: empty_string.join(list(set([x['actor'], x['actor.login'], x['actor_attributes.login']]))), 1)
         print colored('End normalizing username', 'green')
         assert '' not in team_adds_df['username']
         print 'Are there any nulls in username column?: ' + str(pd.isnull(team_adds_df['username']).any())
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
-        team_adds_df['repository'] = pd.concat([team_adds_df['repository.url'].fillna(''), team_adds_df['repo.url'].fillna(''), team_adds_df['payload.repository.url'].fillna('')], ignore_index=True)
+        #team_adds_df['repository'] = pd.concat([team_adds_df['repository.url'].fillna(''), team_adds_df['repo.url'].fillna(''), team_adds_df['payload.repository.url'].fillna('')], ignore_index=True)
+        team_adds_df['repository'] = team_adds_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['repo.url'], x['payload.repository.url']]))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in team_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(team_adds_df['repository']).any())
@@ -99,6 +108,7 @@ if __name__ == "__main__":
 
     if resume == 'MemberAdds' or resume is None:
         resume = None
+        print colored('Reading the ' + member_adds_csv_filename + ' file.. it may take a while...', 'red')
         member_adds_df = pd.read_csv(ultimate_path + member_adds_csv_filename, header=0,
                                      sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading member_adds_csv_filename done.', 'green')
@@ -109,18 +119,26 @@ if __name__ == "__main__":
         print member_adds_df.tail(20)
         print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
         member_adds_df['created_at'] = member_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print colored('Fixing 5 columns types..', 'green')
+        member_adds_df['payload.member'] = member_adds_df['payload.member'].astype(str)
+        member_adds_df['payload.member.login'] = member_adds_df['payload.member.login'].astype(str)
+        member_adds_df['repository.url'] = member_adds_df['repository.url'].astype(str)
+        member_adds_df['payload.repository.url'] = member_adds_df['payload.repository.url'].astype(str)
+        member_adds_df['repo.url'] = member_adds_df['repo.url'].astype(str)
         print member_adds_df.dtypes  # can verify
         print member_adds_df.head(20)
         print member_adds_df.tail(20)
         print colored('Starting normalizing username', 'green')
         member_adds_df['payload.member'] = member_adds_df['payload.member'].apply(lambda x: json.loads(x)['login'] if ',' in str(x) else x)
-        member_adds_df['username'] = member_adds_df.apply(lambda x: x['payload.member.login'] if ((not pd.isnull(x['payload.member.login'])) and (x['payload.member.login'] != '')) else x['payload.member'], 1)
+        #member_adds_df['username'] = member_adds_df.apply(lambda x: x['payload.member.login'] if ((not pd.isnull(x['payload.member.login'])) and (x['payload.member.login'] != '')) else x['payload.member'], 1)
+        member_adds_df['username'] = member_adds_df.apply(lambda x: empty_string.join(list(set([x['payload.member.login'], x['payload.member']]))), 1)
         print colored('End normalizing username', 'green')
         assert '' not in member_adds_df['username']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['username']).any())
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
-        member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url'].fillna('')], ignore_index=True)
+        #member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url'].fillna('')], ignore_index=True)
+        member_adds_df['repository'] = member_adds_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['payload.repository.url'], x['repo.url']]))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in member_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['repository']).any())
@@ -143,6 +161,7 @@ if __name__ == "__main__":
 
     if resume == 'Created' or resume is None:
         resume = None
+        print colored('Reading the ' + created_at_filename + ' file.. it may take a while...', 'red')
         created_df = pd.read_csv(ultimate_path + created_at_filename, header=0,
                                  sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading created_at_filename done.', 'green')
@@ -183,20 +202,23 @@ if __name__ == "__main__":
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to pulls events...")
 
-    pulls_df = pandas.read_csv(ultimate_path + pulls_csv_filename, header=0,
-                               sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[1], quotechar='"')
-    print 'Reading pulls_csv_filename done..'
-    print pulls_df.dtypes
-    print pulls_df.head()
-    print pulls_df.tail()
-    print 'Parsing IsoDate Zulu time to proper datetime object'
-    team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
-    print pulls_df.dtypes  # can verify
-    print pulls_df.head()
-    print pulls_df.tail()
+    if resume == 'Pulls' or resume is None:
+        resume = None
+        print colored('Reading the ' + pulls_csv_filename + ' file.. it may take a while...', 'red')
+        pulls_df = pandas.read_csv(ultimate_path + pulls_csv_filename, header=0,
+                                   sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[1], quotechar='"')
+        print 'Reading pulls_csv_filename done..'
+        print pulls_df.dtypes
+        print pulls_df.head()
+        print pulls_df.tail()
+        print 'Parsing IsoDate Zulu time to proper datetime object'
+        team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print pulls_df.dtypes  # can verify
+        print pulls_df.head()
+        print pulls_df.tail()
 
-    if WAIT_FOR_USER:
-        raw_input("Press Enter to continue to follows events...")
+        if WAIT_FOR_USER:
+            raw_input("Press Enter to continue to follows events...")
 
     follows_df = pandas.read_csv(ultimate_path + follows_csv_filename, header=0,
                                  sep=',', na_values=['', None], error_bad_lines=False, parse_dates=[1], quotechar='"')
