@@ -345,5 +345,59 @@ if __name__ == "__main__":
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to issues events...")
 
+    if resume == 'Issues' or resume is None:
+        resume = None
+        print colored('Reading the ' + issues_csv_filename + ' file.. it may take a while...', 'red')
+        issues_df = pd.read_csv(ultimate_path + issues_csv_filename, header=0,
+                                sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+        print colored('Reading issues_csv_filename done.', 'green')
+        print colored('Index of issues_df is:', 'green')
+        print issues_df.index[0:5]
+        print issues_df.dtypes
+        print issues_df.head(20)
+        print issues_df.tail(20)
+        print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
+        issues_df['created_at'] = issues_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print colored('Fixing 6 columns types..', 'green')
+        issues_df['repo.url'] = issues_df['repo.url'].astype(str)
+        issues_df['repository.url'] = issues_df['repository.url'].astype(str)
+        issues_df['actor'] = issues_df['actor'].astype(str)
+        issues_df['actor.login'] = issues_df['actor.login'].astype(str)
+        issues_df['payload.actor'] = issues_df['payload.actor'].astype(str)
+        issues_df['actor_attributes.login'] = issues_df['actor_attributes.login'].astype(str)
+        print issues_df.dtypes  # can verify
+        print issues_df.head(20)
+        print issues_df.tail(20)
+        print colored('Starting normalizing actor username', 'green')
+        #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
+        issues_df['username'] = issues_df.apply(lambda x: empty_string.join(list(set([x['actor.login'], x['payload.actor'], x['actor'], x['actor_attributes.login']]))), 1)
+        print colored('End normalizing payload username', 'green')
+        assert '' not in issues_df['username']
+        print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(issues_df['username']).any())
+        print colored('End verifiying payload username', 'green')
+        print colored('Starting normalizing repository', 'green')
+        #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
+        issues_df['repository'] = issues_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['repo.url']]))), 1)
+        print colored('End normalizing repository', 'green')
+        assert '' not in issues_df['repository']
+        print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(issues_df['repository']).any())
+        print colored('End verifiying repository', 'green')
+        print colored('Droping useless before-concat columns', 'red')
+        issues_df = issues_df.drop('repo.url', axis=1)
+        issues_df = issues_df.drop('repository.url', axis=1)
+        issues_df = issues_df.drop('actor', axis=1)
+        issues_df = issues_df.drop('actor.login', axis=1)
+        issues_df = issues_df.drop('payload.actor', axis=1)
+        issues_df = issues_df.drop('actor_attributes.login', axis=1)
+        print colored('Drop of 4 columns complete', 'red')
+        print issues_df.dtypes  # can verify
+        print issues_df.head(20)
+        print issues_df.tail(20)
+        print colored('Writing normalized CSV..', 'blue')
+        issues_df.to_csv(ultimate_path + 'normalized_' + issues_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
+        if WAIT_FOR_USER:
+            raw_input("Press Enter to continue to pushes events...")
+
         if WAIT_FOR_USER:
             raw_input("Press Enter to quit program...")
