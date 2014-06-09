@@ -6,7 +6,7 @@ import getopt
 import sys
 import __builtin__
 
-WAIT_FOR_USER = True
+WAIT_FOR_USER = False
 empty_string = ''
 
 created_at_filename = 'created.csv'
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     resume = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr:v", ["help", "resume=", "verbose"])
+        opts, args = getopt.getopt(sys.argv[1:], "hr:vi", ["help", "resume=", "verbose", "interactive"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print str(err)  # will print something like "option -a not recognized"
@@ -51,6 +51,8 @@ if __name__ == "__main__":
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
+        elif o in ("-i", "--interactive"):
+            WAIT_FOR_USER = True
         elif o in ("-r", "--resume"):
             resume = str(a)
 
@@ -182,14 +184,14 @@ if __name__ == "__main__":
         print created_df.tail(20)
         print colored('Starting normalizing payload object', 'green')
         #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
-        created_df['object'] = created_df.apply(lambda x: empty_string.join(list(set([x['payload.object'].replace('nan', ''), x['payload.ref_type'].replace('nan', '')]))), 1)
+        created_df['object'] = created_df.apply(lambda x: empty_string.join(list(set([x['payload.object'] if x['payload.object'] != 'nan' else '', x['payload.ref_type'] if x['payload.ref_type'] != 'nan' else '']))), 1)
         print colored('End normalizing payload object', 'green')
         assert '' not in created_df['object']
         print 'Are there any nulls in the `object` column?: ' + str(pd.isnull(created_df['object']).any())
         print colored('End verifiying payload object', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        created_df['repository'] = created_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['repo.url']]))), 1)
+        created_df['repository'] = created_df.apply(lambda x: empty_string.join(list(set([x['repository.url'] if x['repository.url'] != 'nan' else '', x['repo.url'] if x['repo.url'] != 'nan' else '']))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in created_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(created_df['repository']).any())
