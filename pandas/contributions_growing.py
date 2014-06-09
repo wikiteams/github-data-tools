@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     if resume == 'MemberAdds' or resume is None:
         resume = None
-        print colored('Reading the ' + member_adds_csv_filename + ' file.. it may take a while...', 'red')
+        print colored('Reading the ' + member_adds_csv_filename + ' file.. it may take a while... (0.8 GB)', 'red')
         member_adds_df = pd.read_csv(ultimate_path + member_adds_csv_filename, header=0,
                                      sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading member_adds_csv_filename done.', 'green')
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        member_adds_df = member_adds_df.join(created_df[created_df['object']=='repository'], on='repository', how='inner', lsuffix="_memb", rsuffix="_cr")
+        member_adds_df = member_adds_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_memb", rsuffix="_cr")
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print member_adds_df.index[0:5]
         print member_adds_df.dtypes
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        pulls_df = pulls_df.join(created_df[created_df['object']=='repository'], on='repository', how='inner', lsuffix="_pull", rsuffix="_cr")
+        pulls_df = pulls_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_pull", rsuffix="_cr")
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print pulls_df.index[0:5]
         print pulls_df.dtypes
