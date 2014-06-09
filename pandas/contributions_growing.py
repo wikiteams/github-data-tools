@@ -69,6 +69,7 @@ if __name__ == "__main__":
         print team_adds_df.tail(20)
         print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
         team_adds_df['created_at'] = team_adds_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        #team_adds_df['created_at'] = team_adds_df['created_at'].astype(datetime)
         print colored('Fixing 4 columns types..', 'green')
         team_adds_df['actor.login'] = team_adds_df['actor.login'].astype(str)
         team_adds_df['repo.url'] = team_adds_df['repo.url'].astype(str)
@@ -217,6 +218,9 @@ if __name__ == "__main__":
         print member_adds_df.head(50)
         print member_adds_df.tail(50)
 
+        print colored('Writing normalized CSV 2..', 'blue')
+        member_adds_df.to_csv(ultimate_path + 'normalized_cr_' + member_adds_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to pulls events...")
 
@@ -266,6 +270,18 @@ if __name__ == "__main__":
         print pulls_df.tail(20)
         print colored('Writing normalized CSV..', 'blue')
         pulls_df.to_csv(ultimate_path + 'normalized_' + pushes_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
+        print colored('-------------------- AGGREGATION --------------', 'red')
+        # assign creation dates to repos in MemberAdd table
+        pulls_df = pulls_df.join(created_df[created_df['object']=='repository'], on='repository', how='inner', lsuffix="_pull", rsuffix="_cr")
+        print colored('-------------------- AGGREGATION completed --------------', 'yellow')
+        print pulls_df.index[0:5]
+        print pulls_df.dtypes
+        print pulls_df.head(50)
+        print pulls_df.tail(50)
+
+        print colored('Writing normalized CSV 2..', 'blue')
+        pulls_df.to_csv(ultimate_path + 'normalized_cr_' + pulls_csv_filename, mode='wb', sep=';', encoding='UTF-8')
 
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to follows events...")
