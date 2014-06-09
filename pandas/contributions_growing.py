@@ -240,7 +240,7 @@ if __name__ == "__main__":
         print colored('Fixing 4 columns types..', 'green')
         pulls_df['actor.login'] = pulls_df['actor.login'].astype(str)
         pulls_df['payload.actor'] = pulls_df['payload.actor'].astype(str)
-        pulls_df['head.repo'] = pulls_df['head.repo'].astype(str)
+        pulls_df['head.repo.url'] = pulls_df['head.repo.url'].astype(str)
         pulls_df['repo.url'] = pulls_df['repo.url'].astype(str)
         print pulls_df.dtypes  # can verify
         print pulls_df.head(20)
