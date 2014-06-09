@@ -36,7 +36,7 @@ def usage():
 
 
 def remove_links(source_string):
-    return source_string.strip('https://github.com/').strip('https://api.github.com/repos/').strip('https://api.github.com/')
+    return source_string.replace('https://github.com/', '').replace('https://api.github.com/repos/', '').replace('https://api.github.com/', '')
 
 
 if __name__ == "__main__":
@@ -315,8 +315,8 @@ if __name__ == "__main__":
         print follows_df.tail(20)
         print colored('Starting normalizing actor username and target username', 'green')
         follows_df['actor'] = follows_df['actor'].apply(lambda x: json.loads(x)['login'] if ',' in str(x) else x)
-        follows_df['username'] = follows_df.apply(lambda x: empty_string.join(list(set([x['actor'], x['actor.login'], x['actor_attributes.login']]))), 1)
-        follows_df['target'] = follows_df.apply(lambda x: empty_string.join(list(set([x['payload.target.login'], x['target.login']]))), 1)
+        follows_df['username'] = follows_df.apply(lambda x: empty_string.join(list(set([x['actor'] if x['actor'] != 'nan' else '', x['actor.login'] if x['actor.login'] != 'nan' else '', x['actor_attributes.login'] if x['actor_attributes.login'] != 'nan' else '']))), 1)
+        follows_df['target'] = follows_df.apply(lambda x: empty_string.join(list(set([x['payload.target.login'] if x['payload.target.login'] != 'nan' else '', x['target.login'] if x['target.login'] != 'nan' else '']))), 1)
         print colored('End normalizing payload username and target username', 'green')
         assert '' not in follows_df['username']
         print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(follows_df['username']).any())
@@ -324,8 +324,8 @@ if __name__ == "__main__":
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing countables', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        follows_df['target-followers'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.followers'], x['payload.target.followers']]))), 1)
-        follows_df['target-repos'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.repos'], x['payload.target.repos']]))), 1)
+        follows_df['target-followers'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.followers'] if x['target.followers'] != 'nan' else '', x['payload.target.followers'] if x['payload.target.followers'] != 'nan' else '']))), 1)
+        follows_df['target-repos'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.repos'] if x['target.repos'] != 'nan' else '', x['payload.target.repos'] if x['payload.target.repos'] != 'nan' else '']))), 1)
         print colored('End normalizing countables', 'green')
         #assert '' not in follows_df['repository']
         #print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(follows_df['repository']).any())
@@ -375,14 +375,14 @@ if __name__ == "__main__":
         print issues_df.tail(20)
         print colored('Starting normalizing actor username', 'green')
         #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
-        issues_df['username'] = issues_df.apply(lambda x: empty_string.join(list(set([x['actor.login'], x['payload.actor'], x['actor'], x['actor_attributes.login']]))), 1)
+        issues_df['username'] = issues_df.apply(lambda x: empty_string.join(list(set([x['actor.login'] if x['actor.login'] != 'nan' else '', x['payload.actor'] if x['payload.actor'] != 'nan' else '', x['actor'] if x['actor'] != 'nan' else '', x['actor_attributes.login'] if x['actor_attributes.login'] != 'nan' else '']))), 1)
         print colored('End normalizing payload username', 'green')
         assert '' not in issues_df['username']
         print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(issues_df['username']).any())
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        issues_df['repository'] = issues_df.apply(lambda x: remove_links(empty_string.join(list(set([x['repository.url'], x['repo.url']]))) ), 1)
+        issues_df['repository'] = issues_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in issues_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(issues_df['repository']).any())
