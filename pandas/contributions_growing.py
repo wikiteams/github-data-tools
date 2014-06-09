@@ -247,14 +247,14 @@ if __name__ == "__main__":
         print pulls_df.tail(20)
         print colored('Starting normalizing actor username', 'green')
         #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
-        pulls_df['username'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['payload.object'], x['payload.ref_type']]))), 1)
+        pulls_df['username'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['actor.login'], x['payload.actor']]))), 1)
         print colored('End normalizing payload username', 'green')
         assert '' not in pulls_df['username']
         print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(pulls_df['username']).any())
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        pulls_df['repository'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['head.repo'], x['repo.url']]))), 1)
+        pulls_df['repository'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['head.repo.url'], x['repo.url']]))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in pulls_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(pulls_df['repository']).any())
@@ -262,7 +262,7 @@ if __name__ == "__main__":
         print colored('Droping useless before-concat columns', 'red')
         pulls_df = pulls_df.drop('actor.login', axis=1)
         pulls_df = pulls_df.drop('payload.actor', axis=1)
-        pulls_df = pulls_df.drop('head.repo', axis=1)
+        pulls_df = pulls_df.drop('head.repo.url', axis=1)
         pulls_df = pulls_df.drop('repo.url', axis=1)
         print colored('Drop of 4 columns complete', 'red')
         print pulls_df.dtypes  # can verify
