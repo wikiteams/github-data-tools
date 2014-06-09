@@ -34,6 +34,11 @@ def usage():
     for line in f:
         print line
 
+
+def remove_links(source_string):
+    return source_string.strip('https://github.com/').strip('https://api.github.com/repos/').strip('https://api.github.com/')
+
+
 if __name__ == "__main__":
     resume = None
 
@@ -80,14 +85,14 @@ if __name__ == "__main__":
         print team_adds_df.tail(20)
         print colored('Starting normalizing username', 'green')
         #team_adds_df['username'] = pd.concat([team_adds_df['actor'], team_adds_df['actor.login'], team_adds_df['actor_attributes.login']], ignore_index=True)
-        team_adds_df['username'] = team_adds_df.apply(lambda x: empty_string.join(list(set([x['actor'], x['actor.login'], x['actor_attributes.login']]))), 1)
+        team_adds_df['username'] = team_adds_df.apply(lambda x: empty_string.join(list(set([x['actor'] if x['actor'] != 'nan' else '', x['actor.login'] if x['actor.login'] != 'nan' else '', x['actor_attributes.login'] if x['actor_attributes.login'] != 'nan' else '']))), 1)
         print colored('End normalizing username', 'green')
         assert '' not in team_adds_df['username']
         print 'Are there any nulls in username column?: ' + str(pd.isnull(team_adds_df['username']).any())
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
         #team_adds_df['repository'] = pd.concat([team_adds_df['repository.url'].fillna(''), team_adds_df['repo.url'].fillna(''), team_adds_df['payload.repository.url'].fillna('')], ignore_index=True)
-        team_adds_df['repository'] = team_adds_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['repo.url'], x['payload.repository.url']]))), 1)
+        team_adds_df['repository'] = team_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else '']))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in team_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(team_adds_df['repository']).any())
@@ -134,14 +139,14 @@ if __name__ == "__main__":
         print colored('Starting normalizing username', 'green')
         member_adds_df['payload.member'] = member_adds_df['payload.member'].apply(lambda x: json.loads(x)['login'] if ',' in str(x) else x)
         #member_adds_df['username'] = member_adds_df.apply(lambda x: x['payload.member.login'] if ((not pd.isnull(x['payload.member.login'])) and (x['payload.member.login'] != '')) else x['payload.member'], 1)
-        member_adds_df['username'] = member_adds_df.apply(lambda x: empty_string.join(list(set([x['payload.member.login'], x['payload.member']]))), 1)
+        member_adds_df['username'] = member_adds_df.apply(lambda x: empty_string.join(list(set([x['payload.member.login'] if x['payload.member.login'] != 'nan' else '', x['payload.member'] if x['payload.member'] != 'nan' else '']))), 1)
         print colored('End normalizing username', 'green')
         assert '' not in member_adds_df['username']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['username']).any())
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
         #member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url'].fillna('')], ignore_index=True)
-        member_adds_df['repository'] = member_adds_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['payload.repository.url'], x['repo.url']]))), 1)
+        member_adds_df['repository'] = member_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in member_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['repository']).any())
@@ -192,7 +197,7 @@ if __name__ == "__main__":
         print colored('End verifiying payload object', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        created_df['repository'] = created_df.apply(lambda x: empty_string.join(list(set([x['repository.url'] if x['repository.url'] != 'nan' else '', x['repo.url'] if x['repo.url'] != 'nan' else '']))), 1)
+        created_df['repository'] = created_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in created_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(created_df['repository']).any())
@@ -247,14 +252,14 @@ if __name__ == "__main__":
         print pulls_df.tail(20)
         print colored('Starting normalizing actor username', 'green')
         #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
-        pulls_df['username'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['actor.login'], x['payload.actor']]))), 1)
+        pulls_df['username'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['actor.login'] if x['actor.login'] != 'nan' else '', x['payload.actor'] if x['payload.actor'] != 'nan' else '']))), 1)
         print colored('End normalizing payload username', 'green')
         assert '' not in pulls_df['username']
         print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(pulls_df['username']).any())
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        pulls_df['repository'] = pulls_df.apply(lambda x: empty_string.join(list(set([x['head.repo.url'], x['repo.url']]))), 1)
+        pulls_df['repository'] = pulls_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['head.repo.url']) if x['head.repo.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in pulls_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(pulls_df['repository']).any())
@@ -269,7 +274,7 @@ if __name__ == "__main__":
         print pulls_df.head(20)
         print pulls_df.tail(20)
         print colored('Writing normalized CSV..', 'blue')
-        pulls_df.to_csv(ultimate_path + 'normalized_' + pushes_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+        pulls_df.to_csv(ultimate_path + 'normalized_' + pulls_csv_filename, mode='wb', sep=';', encoding='UTF-8')
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
@@ -289,7 +294,7 @@ if __name__ == "__main__":
     if resume == 'Follows' or resume is None:
         resume = None
         print colored('Reading the ' + follows_csv_filename + ' file.. it may take a while...', 'red')
-        follows_df = pd.read_csv(ultimate_path + pulls_csv_filename, header=0,
+        follows_df = pd.read_csv(ultimate_path + follows_csv_filename, header=0,
                                  sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading follows_csv_filename done.', 'green')
         print colored('Index of follows_df is:', 'green')
@@ -322,9 +327,9 @@ if __name__ == "__main__":
         follows_df['target-followers'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.followers'], x['payload.target.followers']]))), 1)
         follows_df['target-repos'] = follows_df.apply(lambda x: empty_string.join(list(set([x['target.repos'], x['payload.target.repos']]))), 1)
         print colored('End normalizing countables', 'green')
-        assert '' not in follows_df['repository']
-        print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(follows_df['repository']).any())
-        print colored('End verifiying repository', 'green')
+        #assert '' not in follows_df['repository']
+        #print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(follows_df['repository']).any())
+        #print colored('End verifiying repository', 'green')
         print colored('Droping useless before-concat columns', 'red')
         follows_df = follows_df.drop('actor.login', axis=1)
         follows_df = follows_df.drop('actor', axis=1)
@@ -377,7 +382,7 @@ if __name__ == "__main__":
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        issues_df['repository'] = issues_df.apply(lambda x: empty_string.join(list(set([x['repository.url'], x['repo.url']]))), 1)
+        issues_df['repository'] = issues_df.apply(lambda x: remove_links(empty_string.join(list(set([x['repository.url'], x['repo.url']]))) ), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in issues_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(issues_df['repository']).any())
@@ -395,6 +400,18 @@ if __name__ == "__main__":
         print issues_df.tail(20)
         print colored('Writing normalized CSV..', 'blue')
         issues_df.to_csv(ultimate_path + 'normalized_' + issues_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
+        print colored('-------------------- AGGREGATION --------------', 'red')
+        # assign creation dates to repos in MemberAdd table
+        issues_df = issues_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_issue", rsuffix="_cr")
+        print colored('-------------------- AGGREGATION completed --------------', 'yellow')
+        print issues_df.index[0:5]
+        print issues_df.dtypes
+        print issues_df.head(50)
+        print issues_df.tail(50)
+
+        print colored('Writing normalized CSV 2..', 'blue')
+        issues_df.to_csv(ultimate_path + 'normalized_cr_' + issues_csv_filename, mode='wb', sep=';', encoding='UTF-8')
 
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to pushes events...")
