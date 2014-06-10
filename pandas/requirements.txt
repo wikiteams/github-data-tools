@@ -1,2 +1,5 @@
 termcolor
+
 pandas
+
+pandasql
