@@ -314,7 +314,7 @@ if __name__ == "__main__":
         print follows_df.head(20)
         print follows_df.tail(20)
         print colored('Starting normalizing actor username and target username', 'green')
-        follows_df['actor'] = follows_df['actor'].apply(lambda x: json.loads(x)['login'] if ',' in str(x) else x)
+        follows_df['actor'] = follows_df['actor'].apply(lambda x: x.split(':')[3].split(',')[0].strip() if ',' in str(x) else x)
         follows_df['username'] = follows_df.apply(lambda x: empty_string.join(list(set([x['actor'] if x['actor'] != 'nan' else '', x['actor.login'] if x['actor.login'] != 'nan' else '', x['actor_attributes.login'] if x['actor_attributes.login'] != 'nan' else '']))), 1)
         follows_df['target'] = follows_df.apply(lambda x: empty_string.join(list(set([x['payload.target.login'] if x['payload.target.login'] != 'nan' else '', x['target.login'] if x['target.login'] != 'nan' else '']))), 1)
         print colored('End normalizing payload username and target username', 'green')
