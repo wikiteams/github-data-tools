@@ -4,6 +4,7 @@ from termcolor import colored
 import json
 import getopt
 import sys
+from pandasql import *
 import __builtin__
 
 WAIT_FOR_USER = False
@@ -41,9 +42,10 @@ def remove_links(source_string):
 
 if __name__ == "__main__":
     resume = None
+    aggr = 'sql'
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr:vi", ["help", "resume=", "verbose", "interactive"])
+        opts, args = getopt.getopt(sys.argv[1:], "hr:via:", ["help", "resume=", "verbose", "interactive", "aggregate="])
     except getopt.GetoptError as err:
         # print help information and exit:
         print str(err)  # will print something like "option -a not recognized"
@@ -60,6 +62,9 @@ if __name__ == "__main__":
             WAIT_FOR_USER = True
         elif o in ("-r", "--resume"):
             resume = str(a)
+        elif o in ("-a", "--aggregate"):
+            assert str(a) in ['sql', 'native', 'default']
+            aggr = str(a).replace('default','sql')
 
     if resume == 'TeamAdds' or resume is None:
         resume = None
@@ -215,8 +220,28 @@ if __name__ == "__main__":
         created_df.to_csv(ultimate_path + 'normalized_' + created_at_filename, mode='wb', sep=';', encoding='UTF-8')
 
         print colored('-------------------- AGGREGATION --------------', 'red')
-        # assign creation dates to repos in MemberAdd table
-        member_adds_df = member_adds_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_memb", rsuffix="_cr")
+        if aggr == 'native':
+            member_adds_df = member_adds_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_memb", rsuffix="_cr")
+        elif aggr == 'sql':
+            #print colored('reading globals to sqldf', 'yellow')
+            #pysqldf = lambda q: sqldf(q, globals())
+            print colored('preparing SQL..', 'yellow')
+            q = """
+            SELECT
+            mb.created_at, mb.username, mb.repository, cr.created_at
+            FROM
+            member_adds_df mb
+            LEFT JOIN
+            created_df cr
+            ON mb.repository = cr.repository
+            WHERE
+            cr.object == 'repository';
+            """
+            print colored('executing SQL..', 'yellow')
+            member_adds_df = sqldf(q, globals())
+            print colored('done executing SQL...', 'green')
+        else:
+            assert False
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print member_adds_df.index[0:5]
         print member_adds_df.dtypes
@@ -278,7 +303,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        pulls_df = pulls_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_pull", rsuffix="_cr")
+        pulls_df = pulls_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_pull", rsuffix="_cr")
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print pulls_df.index[0:5]
         print pulls_df.dtypes
@@ -310,6 +335,10 @@ if __name__ == "__main__":
         follows_df['actor_attributes.login'] = follows_df['actor_attributes.login'].astype(str)
         follows_df['payload.target.login'] = follows_df['payload.target.login'].astype(str)
         follows_df['target.login'] = follows_df['target.login'].astype(str)
+        follows_df['payload.target.repos'] = follows_df['payload.target.repos'].astype(str)
+        follows_df['target.repos'] = follows_df['target.repos'].astype(str)
+        follows_df['payload.target.followers'] = follows_df['payload.target.followers'].astype(str)
+        follows_df['target.followers'] = follows_df['target.followers'].astype(str)
         print follows_df.dtypes  # can verify
         print follows_df.head(20)
         print follows_df.tail(20)
@@ -403,7 +432,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        issues_df = issues_df.join(created_df[created_df['object'] == 'repository'], on='repository', how='inner', lsuffix="_issue", rsuffix="_cr")
+        issues_df = issues_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_issue", rsuffix="_cr")
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print issues_df.index[0:5]
         print issues_df.dtypes
