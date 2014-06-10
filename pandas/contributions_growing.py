@@ -37,7 +37,7 @@ def usage():
 
 
 def remove_links(source_string):
-    return source_string.replace('https://github.com/', '').replace('https://api.github.com/repos/', '').replace('https://api.github.com/', '')
+    return source_string.replace('https://github.com/', '').replace('https://api.github.com/repos/', '').replace('https://api.github.dev/repos/', '').replace('https://api.github.com/', '')
 
 
 if __name__ == "__main__":
@@ -306,7 +306,28 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        pulls_df = pulls_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('_pull', '_cr'))
+        if aggr == 'native':
+            pulls_df = pulls_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('_pull', '_cr'))
+        elif aggr == 'sql':
+            #print colored('reading globals to sqldf', 'yellow')
+            #pysqldf = lambda q: sqldf(q, globals())
+            print colored('preparing SQL..', 'yellow')
+            q = """
+            SELECT
+            pll.created_at, pll.username, pll.repository, cr.created_at
+            FROM
+            pulls_df pll
+            LEFT JOIN
+            created_df cr
+            ON pll.repository = cr.repository
+            WHERE
+            cr.object == 'repository';
+            """
+            print colored('executing SQL..', 'yellow')
+            pulls_df = sqldf(q, globals())
+            print colored('done executing SQL...', 'green')
+        else:
+            assert False
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print pulls_df.index[0:5]
         print pulls_df.dtypes
@@ -435,7 +456,28 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        issues_df = issues_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('"_issue', '_cr'))
+        if aggr == 'native':
+            issues_df = issues_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('"_issue', '_cr'))
+        elif aggr == 'sql':
+            #print colored('reading globals to sqldf', 'yellow')
+            #pysqldf = lambda q: sqldf(q, globals())
+            print colored('preparing SQL..', 'yellow')
+            q = """
+            SELECT
+            iss.created_at, iss.username, iss.repository, cr.created_at
+            FROM
+            issues_df iss
+            LEFT JOIN
+            created_df cr
+            ON iss.repository = cr.repository
+            WHERE
+            cr.object == 'repository';
+            """
+            print colored('executing SQL..', 'yellow')
+            issues_df = sqldf(q, globals())
+            print colored('done executing SQL...', 'green')
+        else:
+            assert False
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print issues_df.index[0:5]
         print issues_df.dtypes
