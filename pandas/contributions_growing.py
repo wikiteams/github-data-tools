@@ -64,7 +64,7 @@ if __name__ == "__main__":
             resume = str(a)
         elif o in ("-a", "--aggregate"):
             assert str(a) in ['sql', 'native', 'default']
-            aggr = str(a).replace('default','sql')
+            aggr = str(a).replace('default', 'sql')
 
     if resume == 'TeamAdds' or resume is None:
         resume = None
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
         #team_adds_df['repository'] = pd.concat([team_adds_df['repository.url'].fillna(''), team_adds_df['repo.url'].fillna(''), team_adds_df['payload.repository.url'].fillna('')], ignore_index=True)
-        team_adds_df['repository'] = team_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else '']))) ), 1)
+        team_adds_df['repository'] = team_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else ''])))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in team_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(team_adds_df['repository']).any())
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         print colored('End verifiying usernames', 'green')
         print colored('Starting normalizing repository', 'green')
         #member_adds_df['repository'] = pd.concat([member_adds_df['repository.url'].fillna(''), member_adds_df['payload.repository.url'].fillna(''), member_adds_df['repo.url'].fillna('')], ignore_index=True)
-        member_adds_df['repository'] = member_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
+        member_adds_df['repository'] = member_adds_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['payload.repository.url']) if x['payload.repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else ''])))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in member_adds_df['repository']
         print 'Are there any nulls in repository column?: ' + str(pd.isnull(member_adds_df['repository']).any())
@@ -221,7 +221,10 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         if aggr == 'native':
-            member_adds_df = member_adds_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_memb", rsuffix="_cr")
+            # merge is a function in the pandas namespace, and it is also available as a
+            # DataFrame instance method, with the calling DataFrame being
+            # implicitly considered the left object in the join.
+            member_adds_df = member_adds_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('_memb', '_cr'))
         elif aggr == 'sql':
             #print colored('reading globals to sqldf', 'yellow')
             #pysqldf = lambda q: sqldf(q, globals())
@@ -258,7 +261,7 @@ if __name__ == "__main__":
         resume = None
         print colored('Reading the ' + pulls_csv_filename + ' file.. it may take a while...', 'red')
         pulls_df = pd.read_csv(ultimate_path + pulls_csv_filename, header=0,
-                                 sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+                               sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
         print colored('Reading pulls_csv_filename done.', 'green')
         print colored('Index of pulls_df is:', 'green')
         print pulls_df.index[0:5]
@@ -284,7 +287,7 @@ if __name__ == "__main__":
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        pulls_df['repository'] = pulls_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['head.repo.url']) if x['head.repo.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
+        pulls_df['repository'] = pulls_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['head.repo.url']) if x['head.repo.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else ''])))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in pulls_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(pulls_df['repository']).any())
@@ -303,7 +306,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        pulls_df = pulls_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_pull", rsuffix="_cr")
+        pulls_df = pulls_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('_pull', '_cr'))
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print pulls_df.index[0:5]
         print pulls_df.dtypes
@@ -411,7 +414,7 @@ if __name__ == "__main__":
         print colored('End verifiying payload username', 'green')
         print colored('Starting normalizing repository', 'green')
         #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
-        issues_df['repository'] = issues_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else '']))) ), 1)
+        issues_df['repository'] = issues_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else ''])))), 1)
         print colored('End normalizing repository', 'green')
         assert '' not in issues_df['repository']
         print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(issues_df['repository']).any())
@@ -432,7 +435,7 @@ if __name__ == "__main__":
 
         print colored('-------------------- AGGREGATION --------------', 'red')
         # assign creation dates to repos in MemberAdd table
-        issues_df = issues_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', lsuffix="_issue", rsuffix="_cr")
+        issues_df = issues_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('"_issue', '_cr'))
         print colored('-------------------- AGGREGATION completed --------------', 'yellow')
         print issues_df.index[0:5]
         print issues_df.dtypes
