@@ -490,5 +490,87 @@ if __name__ == "__main__":
         if WAIT_FOR_USER:
             raw_input("Press Enter to continue to pushes events...")
 
+    if resume == 'Pushes' or resume is None:
+        resume = None
+        print colored('Reading the ' + pushes_csv_filename + ' file.. it may take a while...', 'red')
+        pushes_df = pd.read_csv(ultimate_path + pushes_csv_filename, header=0,
+                                sep=',', na_values=['', None], error_bad_lines=False, quotechar='"')
+        print colored('Reading pushes_csv_filename done.', 'green')
+        print colored('Index of pushes_df is:', 'green')
+        print pushes_df.index[0:5]
+        print pushes_df.dtypes
+        print pushes_df.head(20)
+        print pushes_df.tail(20)
+        print colored('Parsing IsoDate Zulu time to proper datetime object', 'green')
+        pushes_df['created_at'] = pushes_df['created_at'].apply(lambda x: dateutil.parser.parse(x))
+        print colored('Fixing 5 columns types..', 'green')
+        pushes_df['actor.login'] = pushes_df['actor.login'].astype(str)
+        pushes_df['payload.actor'] = pushes_df['payload.actor'].astype(str)
+        pushes_df['actor_attributes.login'] = pushes_df['actor_attributes.login'].astype(str)
+        pushes_df['repository.url'] = pushes_df['repository.url'].astype(str)
+        pushes_df['repo.url'] = pushes_df['repo.url'].astype(str)
+        print pushes_df.dtypes  # can verify
+        print pushes_df.head(20)
+        print pushes_df.tail(20)
+        print colored('Starting normalizing actor username', 'green')
+        #created_df['object'] = pd.concat([created_df['payload.object'].fillna(''), created_df['payload.ref_type'].fillna('')], ignore_index=True)
+        pushes_df['username'] = pushes_df.apply(lambda x: empty_string.join(list(set([x['actor.login'] if x['actor.login'] != 'nan' else '', x['payload.actor'] if x['payload.actor'] != 'nan' else '', x['actor_attributes.login'] if x['actor_attributes.login'] != 'nan' else '']))), 1)
+        print colored('End normalizing payload username', 'green')
+        assert '' not in pushes_df['username']
+        print 'Are there any nulls in the `username` column?: ' + str(pd.isnull(pushes_df['username']).any())
+        print colored('End verifiying payload username', 'green')
+        print colored('Starting normalizing repository', 'green')
+        #created_df['repository'] = pd.concat([created_df['repository.url'].fillna(''), created_df['repo.url'].fillna('')], ignore_index=True)
+        pushes_df['repository'] = pushes_df.apply(lambda x: remove_links(empty_string.join(list(set([remove_links(x['repository.url']) if x['repository.url'] != 'nan' else '', remove_links(x['repo.url']) if x['repo.url'] != 'nan' else ''])))), 1)
+        print colored('End normalizing repository', 'green')
+        assert '' not in pushes_df['repository']
+        print 'Are there any nulls in the `repository` column?: ' + str(pd.isnull(pushes_df['repository']).any())
+        print colored('End verifiying repository', 'green')
+        print colored('Droping useless before-concat columns', 'red')
+        pushes_df = pushes_df.drop('actor.login', axis=1)
+        pushes_df = pushes_df.drop('payload.actor', axis=1)
+        pushes_df = pushes_df.drop('actor_attributes.login', axis=1)
+        pushes_df = pushes_df.drop('repository.url', axis=1)
+        pushes_df = pushes_df.drop('repo.url', axis=1)
+        print colored('Drop of 5 columns complete', 'red')
+        print pushes_df.dtypes  # can verify
+        print pushes_df.head(20)
+        print pushes_df.tail(20)
+        print colored('Writing normalized CSV..', 'blue')
+        pushes_df.to_csv(ultimate_path + 'normalized_' + pushes_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
+        print colored('-------------------- AGGREGATION --------------', 'red')
+        # assign creation dates to repos in MemberAdd table
+        if aggr == 'native':
+            pushes_df = pushes_df.merge(created_df[created_df['object'] == 'repository'], on='repository', how='left', suffixes=('_push', '_cr'))
+        elif aggr == 'sql':
+            #print colored('reading globals to sqldf', 'yellow')
+            #pysqldf = lambda q: sqldf(q, globals())
+            print colored('preparing SQL..', 'yellow')
+            q = """
+            SELECT
+            ps.created_at, ps.username, ps.repository, cr.created_at
+            FROM
+            pushes_df ps
+            LEFT JOIN
+            created_df cr
+            ON ps.repository = cr.repository
+            WHERE
+            cr.object == 'repository';
+            """
+            print colored('executing SQL..', 'yellow')
+            pushes_df = sqldf(q, globals())
+            print colored('done executing SQL...', 'green')
+        else:
+            assert False
+        print colored('-------------------- AGGREGATION completed --------------', 'yellow')
+        print pushes_df.index[0:5]
+        print pushes_df.dtypes
+        print pushes_df.head(50)
+        print pushes_df.tail(50)
+
+        print colored('Writing normalized CSV 2..', 'blue')
+        pushes_df.to_csv(ultimate_path + 'normalized_cr_' + pushes_csv_filename, mode='wb', sep=';', encoding='UTF-8')
+
         if WAIT_FOR_USER:
             raw_input("Press Enter to quit program...")
