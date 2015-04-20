@@ -1,0 +1,5 @@
+simplejson
+beautifulsoup4
+mechanize
+MySQL-python
+mysqlclient
