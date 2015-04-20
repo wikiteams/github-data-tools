@@ -1,7 +1,7 @@
 import scream
 from github import Github, UnknownObjectException, GithubException
 import sys
-import time
+import json
 import argparse
 # import ElementTree based on the python version
 try:
@@ -13,7 +13,7 @@ try:
 except ImportError:
     import _mysql as MSQL
 
-version_name = 'version 1.0 codename: Poliglot'
+version_name = 'version 1.0 codename: Polyglot'
 auth_with_tokens = True
 
 github_clients = list()
@@ -119,6 +119,8 @@ if __name__ == "__main__":
     row = cursor.fetchone()
     iterator = 1.0
 
+    update_cursor = first_conn.cursor()
+
     while row is not None:
         repoid = str(row[0])
         url = str(row[1])
@@ -133,5 +135,13 @@ if __name__ == "__main__":
         repository = github_client.get_repo(repo_full_name)
 
         languages = repository.get_languages()
+        print str(languages)
 
-        print languages
+        for key in languages:
+            print key, 'corresponds to', languages[key]
+            update_query = r'insert into {0} values ({1}, "{2}", {3})'.format(output_tb_name, repoid, key, languages[key])
+            print update_query
+            update_cursor.execute(update_query)
+
+    update_cursor.close()
+    cursor.close()
