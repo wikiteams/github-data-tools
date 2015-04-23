@@ -1,8 +1,9 @@
 import scream
 from github import Github, UnknownObjectException, GithubException
 import sys
-import json
+import random
 import argparse
+import mechanize
 # import ElementTree based on the python version
 try:
     import elementtree.ElementTree as ET
@@ -28,6 +29,26 @@ show_trace = False
 record_count = None
 IP_ADDRESS = "10.4.4.3"  # Be sure to update this to your needs
 
+failed = list()
+
+'''
+about get_newer_url(full_name)
+
+Returns tuple, 1st element is boolean which tells whether repo changed name or not
+2nd element is the new repo full_name (owner + '/' + name)
+'''
+
+
+def get_newer_url(full_name):
+    my_browser = mechanize.Browser()
+    sep = '/'
+    my_browser.set_handle_robots(False)   # ignore robots
+    my_browser.set_handle_refresh(False)  # can sometimes hang without this
+    response = my_browser.open('http://github.com/' + full_name)
+    response.read()
+    new_full_name = sep.join(response.geturl().split(sep)[-2:])
+    return (full_name != new_full_name, new_full_name)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,6 +61,8 @@ if __name__ == "__main__":
     scream.say('Start main execution')
     scream.say('Welcome to WikiTeams.pl GitHub repo analyzer!')
     scream.say(version_name)
+
+    assert get_newer_url("jacquev6/PyGithub")[1] == "PyGithub/PyGithub"  # just for a snappy test
 
     secrets = []
 
@@ -125,23 +148,45 @@ if __name__ == "__main__":
         repoid = str(row[0])
         url = str(row[1])
         iterator += 1
-        print "[Progress]: " + str((iterator / record_count) * 100) + "% ----------- "  # [names] size: " + str(len(names))
+        scream.say("[Progress]: " + str((iterator / record_count) * 100) + "% ----------- ")  # [names] size: " + str(len(names))
 
         repo_full_name = url.split("/")[-2] + "/" + url.split("/")[-1]
-        print repo_full_name
+        scream.say(repo_full_name)
 
         row = cursor.fetchone()
 
-        repository = github_client.get_repo(repo_full_name)
+        github_client = random.choice(github_clients)
+
+        try:
+            is_redirected, redir_full_name = get_newer_url(repo_full_name)
+            repository = github_client.get_repo(redir_full_name)
+            redir_url = repository.url
+        except UnknownObjectException as e:
+            print 'Repository ' + str(repoid) + 'deleted'
+            continue
+        except GithubException as e:
+            failed.append(repoid)
+            continue
+        except Exception as e:
+            failed.append(repoid)
+            continue
 
         languages = repository.get_languages()
         print str(languages)
 
         for key in languages:
             print key, 'corresponds to', languages[key]
-            update_query = r'insert into {0} values ({1}, "{2}", {3})'.format(output_tb_name, repoid, key, languages[key])
-            print update_query
+            update_query = r'insert into {0} values ({1}, "{2}", {3}, {4}, "{5}", "{6}")'.format(output_tb_name, repoid,
+                                                                                                 key, languages[key], 1 if is_redirected else 0,
+                                                                                                 redir_url, redir_full_name)
+            scream.say(update_query)
             update_cursor.execute(update_query)
 
     update_cursor.close()
     cursor.close()
+
+    print 'Failed to get:'
+    print str(failed)
+    f = open('failed.info', 'w')
+    f.write(str(failed))
+    f.close()
